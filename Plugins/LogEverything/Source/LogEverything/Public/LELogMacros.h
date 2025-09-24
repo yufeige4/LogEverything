@@ -69,11 +69,17 @@
 	}
 
 /**
- * 核心日志宏 - 使用声明的分类
- * Core logging macro - uses declared categories
+ * 核心日志宏 - 使用声明的分类，通过 Bridge 调用 BqLog 模板接口
+ * Core logging macro - uses declared categories with BqLog template interface via Bridge
  *
  * 使用方式：
- * LE_LOG(LogGameCombatSkill, Warning, TEXT("Player %s cast skill %s"), *PlayerName, *SkillName);
+ * LE_LOG(LogGameCombatSkill, Warning, TEXT("Player {} cast skill {}"), PlayerName, SkillName);
+ *
+ * 性能优势：
+ * - 通过 Bridge 直接调用 BqLog 模板接口，避免字符串预格式化
+ * - 零额外内存分配和拷贝
+ * - 保留 Category 级别检查逻辑，支持后续的 CheckCanLog 功能
+ * - 利用 BqLog 内置的高性能优化
  *
  * @param Category   已声明的分类 (如 LogGameCombatSkill)
  * @param Verbosity  日志级别 (Fatal, Error, Warning, Log, Verbose, VeryVerbose)
@@ -83,19 +89,13 @@
 #define LE_LOG(Category, Verbosity, Format, ...) \
 	do \
 	{ \
-		const bq::LogEverythingLogger* LogInstance = FLEBqLogBridge::Get().GetCategoryLogInstance(); \
-		if (LogInstance != nullptr) \
+		if (Category.IsInitialized()) \
 		{ \
-			FString FormattedMessage = FString::Printf(Format, ##__VA_ARGS__); \
-			TArray<uint8> UTF8Message = FLEBqLogBridge::Get().FStringToUTF8(FormattedMessage); \
-			const char* MessageCStr = (const char*)UTF8Message.GetData(); \
-			bq::log_level BqLogLevel = FLEBqLogBridge::Get().ConvertVerbosityToBqLog(ELogVerbosity::Verbosity); \
-			auto CategoryHandle = Category.GetCategoryHandle(*LogInstance); \
-			FLEBqLogBridge::Get().LogMessage(CategoryHandle, BqLogLevel, MessageCStr); \
+			FLEBqLogBridge::Get().LogWithTemplate(Category, ELogVerbosity::Verbosity, Format, ##__VA_ARGS__); \
 		} \
 		else \
 		{ \
-			LE_SYSTEM_LOG(TEXT("[LE-NotInit][%s] " Format), *Category.GetCategoryName().ToString(), ##__VA_ARGS__); \
+			LE_SYSTEM_LOG(TEXT("[Category-NotInit][%s] " Format), *Category.GetCategoryName().ToString(), ##__VA_ARGS__); \
 		} \
 	} while (0)
 

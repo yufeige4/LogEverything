@@ -47,15 +47,35 @@ void TestLogEverythingBasicSystem()
 	LE_LOG(LogGameAIBehaviorTree, Verbose, TEXT("AI 行为树调试信息"));
 	LE_LOG(LogEngineCoreMemory, Log, TEXT("内存分配跟踪"));
 
-	// 4. 测试不同格式的消息
+	// 4. 测试 BqLog 现代化格式的消息（使用 {} 占位符）
 	int32 TestValue = 42;
 	FString TestString = TEXT("测试字符串");
-	LE_LOG(LogTestSystemBasic, Log, TEXT("测试参数化消息: 数值=%d, 字符串=%s"), TestValue, *TestString);
+	float FloatValue = 3.14159f;
+	bool BoolValue = true;
+	LE_LOG(LogTestSystemBasic, Log, TEXT("测试现代化参数化消息: 数值={}, 字符串={}, 浮点={:.2f}, 布尔={}"), TestValue, *TestString, FloatValue, BoolValue);
 
-	// 5. 强制刷新日志缓冲区
+	// 5. 测试条件日志和便利宏
+	int32 HealthValue = 15;
+	FString PlayerName = TEXT("TestPlayer");
+	LE_CLOG(HealthValue < 20, LogTestSystemBasic, Warning, TEXT("玩家 {} 生命值过低: {}"), *PlayerName, HealthValue);
+
+	// 6. 测试便利宏
+	LE_LOG_INFO(LogTestSystemBasic, TEXT("便利宏测试: 信息级别"));
+	LE_LOG_WARNING(LogTestSystemBasic, TEXT("便利宏测试: 警告级别"));
+	LE_LOG_ERROR(LogTestSystemBasic, TEXT("便利宏测试: 错误级别"));
+
+	// 7. 测试不同精度的浮点数格式化
+	double PrecisionValue = 123.456789;
+	LE_LOG(LogTestSystemBasic, Log, TEXT("精度测试: {:.1f}, {:.3f}, {:.6f}"), PrecisionValue, PrecisionValue, PrecisionValue);
+
+	// 8. 测试 FName 和字符串转换
+	FName TestName = FName(TEXT("TestCategory"));
+	LE_LOG(LogTestSystemBasic, Log, TEXT("FName 测试: {}"), *TestName.ToString());
+
+	// 9. 强制刷新日志缓冲区
 	FLEBqLogBridge::Get().FlushLogs();
 
-	LE_SYSTEM_LOG(TEXT("LogEverything 基础功能测试完成"));
+	LE_SYSTEM_LOG(TEXT("LogEverything 现代化格式和重构功能测试完成"));
 }
 
 /**

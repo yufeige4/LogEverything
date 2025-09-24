@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
-	"Version": 5,
-	"VersionName": "0.5",
+	"Version": 6,
+	"VersionName": "0.6.0",
 	"FriendlyName": "LogEverything",
 	"Description": "An advanced log system for Unreal Engine based on BQLog",
 	"Category": "Other",

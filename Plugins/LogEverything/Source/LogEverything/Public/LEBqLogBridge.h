@@ -58,10 +58,16 @@ public:
 	/** 强制刷新日志缓冲区 */
 	void FlushLogs();
 
-	/** 通用日志记录函数 - 使用分类句柄 */
-	template<uint32_t CAT_INDEX>
-	bool LogMessage(const bq::LogEverythingLogger::LogEverythingLogger_category_base<CAT_INDEX>& CategoryHandle,
-					bq::log_level Level, const char* Message);
+
+	/** 高性能模板日志函数 - 直接调用 BqLog 模板接口，避免字符串预格式化
+	 * 使用 LE Category 对象，支持级别检查和后续的 CheckCanLog 功能
+	 * @param Category  声明的分类对象 (如 LogGameCombatSkill)
+	 * @param Level     UE 日志级别
+	 * @param Format    格式化字符串
+	 * @param Args      格式化参数
+	 */
+	template<typename CategoryType, typename FormatType, typename... Args>
+	void LogWithTemplate(const CategoryType& Category, ELogVerbosity::Type Level, const FormatType& Format, const Args&... Arguments);
 
 public:
 	/** UTF-8 与 UTF-16 转换函数 */
@@ -114,31 +120,51 @@ private:
 
 };
 
-// 模板函数实现（放在类定义外，但仍在头文件中以确保模板实例化）
-template<uint32_t CAT_INDEX>
-bool FLEBqLogBridge::LogMessage(const bq::LogEverythingLogger::LogEverythingLogger_category_base<CAT_INDEX>& CategoryHandle,
-								bq::log_level Level, const char* Message)
+// 模板函数实现
+
+template<typename CategoryType, typename FormatType, typename... Args>
+void FLEBqLogBridge::LogWithTemplate(const CategoryType& Category, ELogVerbosity::Type Level, const FormatType& Format, const Args&... Arguments)
 {
+	// 检查 BqLog 实例是否有效
 	if (!bIsInitialized || !CategoryLogInstance)
 	{
-		return false;
+		return;
 	}
 
+	// 检查分类级别是否允许输出日志（保留现有的级别检查机制）
+	// 性能太差, 暂时先注掉, 后续进行详细设计后再打开
+	// if (!ShouldLogCategory(Category.GetCategoryName(), Level))
+	// {
+	// 	return;
+	// }
+
+	// 获取分类句柄
+	auto CategoryHandle = Category.GetCategoryHandle(*CategoryLogInstance);
+
+	// 根据日志级别调用相应的 BqLog 模板方法，直接传递格式和参数
 	switch (Level)
 	{
-	case bq::log_level::fatal:
-		return CategoryLogInstance->fatal(CategoryHandle, Message);
-	case bq::log_level::error:
-		return CategoryLogInstance->error(CategoryHandle, Message);
-	case bq::log_level::warning:
-		return CategoryLogInstance->warning(CategoryHandle, Message);
-	case bq::log_level::info:
-		return CategoryLogInstance->info(CategoryHandle, Message);
-	case bq::log_level::debug:
-		return CategoryLogInstance->debug(CategoryHandle, Message);
-	case bq::log_level::verbose:
-		return CategoryLogInstance->verbose(CategoryHandle, Message);
+	case ELogVerbosity::Fatal:
+		(void)CategoryLogInstance->fatal(CategoryHandle, Format, Arguments...);
+		break;
+	case ELogVerbosity::Error:
+		(void)CategoryLogInstance->error(CategoryHandle, Format, Arguments...);
+		break;
+	case ELogVerbosity::Warning:
+		(void)CategoryLogInstance->warning(CategoryHandle, Format, Arguments...);
+		break;
+	case ELogVerbosity::Display:
+	case ELogVerbosity::Log:
+		(void)CategoryLogInstance->info(CategoryHandle, Format, Arguments...);
+		break;
+	case ELogVerbosity::Verbose:
+		(void)CategoryLogInstance->debug(CategoryHandle, Format, Arguments...);
+		break;
+	case ELogVerbosity::VeryVerbose:
+		(void)CategoryLogInstance->verbose(CategoryHandle, Format, Arguments...);
+		break;
 	default:
-		return CategoryLogInstance->info(CategoryHandle, Message);
+		(void)CategoryLogInstance->info(CategoryHandle, Format, Arguments...);
+		break;
 	}
 }

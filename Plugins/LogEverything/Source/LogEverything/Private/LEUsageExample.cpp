@@ -7,7 +7,9 @@
  * LogEverything 使用示例
  * Usage examples for the LogEverything system
  *
- * 这个文件演示了如何使用新的 UE 风格的分类声明和日志记录系统
+ * 这个文件演示了如何使用 BqLog 现代化格式化和 UE 风格的分类声明系统
+ * 重要：现在使用 {} 占位符而不是传统的 %s、%d 格式
+ * 可以直接传递 FString、FName、FText 等 UE 类型，无需解引用
  */
 
 void ExampleUsage()
@@ -19,26 +21,41 @@ void ExampleUsage()
 	// 基本日志记录
 	LE_LOG(LogGameCombatSkill, Log, TEXT("Player activated skill system"));
 
-	// 带参数的日志记录
+	// 带参数的日志记录 - 使用 BqLog 现代化 {} 占位符格式
 	FString PlayerName = TEXT("TestPlayer");
 	FString SkillName = TEXT("FireBall");
 	int32 Damage = 150;
-	LE_LOG(LogGameCombatDamage, Warning, TEXT("Player %s dealt %d damage with %s"), *PlayerName, Damage, *SkillName);
+	float CriticalChance = 0.75f;
+	LE_LOG(LogGameCombatDamage, Warning, TEXT("Player {} dealt {} damage with {} (crit chance: {:.2f})"), *PlayerName, Damage, *SkillName, CriticalChance);
 
-	// 条件日志记录
+	// 条件日志记录 - 展示 BqLog 对 Unreal 类型的处理
 	int32 Health = 15;
-	LE_CLOG(Health < 20, LogGameCombatDamage, Error, TEXT("Player health critical: %d"), Health);
+	FName PlayerState = FName(TEXT("CriticalHealth"));
+	FText StatusMessage = FText::FromString(TEXT("需要治疗"));
+	LE_CLOG(Health < 20, LogGameCombatDamage, Error, TEXT("Player health critical: {}, status: {}, message: {}"), Health, *PlayerState.ToString(), *StatusMessage.ToString());
 
 	// =============================================================================
 	// 便利宏使用示例
 	// =============================================================================
 
-	// 使用便利宏
-	LE_LOG_FATAL(LogGameNetworkSecurity, TEXT("Security breach detected!"));
-	LE_LOG_ERROR(LogGameAIPathfinding, TEXT("Failed to find path to target"));
-	LE_LOG_WARNING(LogGamePhysicsCollision, TEXT("Collision detection threshold exceeded"));
-	LE_LOG_INFO(LogGameRenderingMesh, TEXT("Mesh loaded successfully: %s"), *FString("TestMesh"));
-	LE_LOG_VERBOSE(LogGameUIInteraction, TEXT("Button clicked: %s"), *FString("StartButton"));
+	// 使用便利宏 - 展示各种类型的 BqLog 格式化
+	FString ThreatLevel = TEXT("Critical");
+	LE_LOG_FATAL(LogGameNetworkSecurity, TEXT("Security breach detected! Threat level: {}"), *ThreatLevel);
+
+	FString TargetLocation = TEXT("NavMesh_Point_142");
+	LE_LOG_ERROR(LogGameAIPathfinding, TEXT("Failed to find path to target: {}"), *TargetLocation);
+
+	float CollisionThreshold = 0.85f;
+	bool bThresholdExceeded = true;
+	LE_LOG_WARNING(LogGamePhysicsCollision, TEXT("Collision detection threshold exceeded: {:.3f}, critical: {}"), CollisionThreshold, bThresholdExceeded);
+
+	FString MeshName = TEXT("SM_Character_Helmet");
+	int32 VertexCount = 1024;
+	LE_LOG_INFO(LogGameRenderingMesh, TEXT("Mesh loaded successfully: {}, vertices: {}"), *MeshName, VertexCount);
+
+	FName ButtonName = FName(TEXT("btn_StartGame"));
+	double ClickTime = FPlatformTime::Seconds();
+	LE_LOG_VERBOSE(LogGameUIInteraction, TEXT("Button clicked: {}, timestamp: {:.6f}"), *ButtonName.ToString(), ClickTime);
 
 	// =============================================================================
 	// 运行时配置示例
@@ -67,12 +84,13 @@ void ExampleUsage()
 		// 模拟一些工作
 		FPlatformProcess::Sleep(0.1f);
 
-		// 性能日志（自动记录执行时间）
-		// 简单的性能记录
+		// 性能日志 - 展示高精度浮点数格式化
+		FString OperationName = TEXT("PathfindingAlgorithm");
 		double StartTime = FPlatformTime::Seconds();
 		// ... 执行计算 ...
 		double Duration = FPlatformTime::Seconds() - StartTime;
-		LE_LOG(LogGameCorePerformance, Log, TEXT("ExpensiveCalculation took %.4f seconds"), Duration);
+		int32 NodesProcessed = 1500;
+		LE_LOG(LogGameCorePerformance, Log, TEXT("{} completed in {:.4f} seconds, processed {} nodes"), *OperationName, Duration, NodesProcessed);
 
 		// 更多工作...
 	} // 这里会自动记录退出作用域的日志
@@ -83,20 +101,30 @@ void ExampleUsage()
 
 	UObject* SomeObject = nullptr;
 
-	// 断言检查
-	LE_CHECK(IsValid(SomeObject), LogGameCoreMemory, Error, TEXT("Object validation failed"));
+	// 断言检查 - 展示 nullptr 和对象信息的格式化
+	FString ObjectTypeName = TEXT("UGameplayEffect");
+	void* ObjectPtr = SomeObject;
+	LE_CHECK(IsValid(SomeObject), LogGameCoreMemory, Error, TEXT("Object validation failed: {} at address {}"), *ObjectTypeName, ObjectPtr);
 
-	// 确保检查（继续执行，但记录错误）
-	LE_ENSURE(SomeObject != nullptr, LogGameCoreMemory, Warning, TEXT("Object is null but continuing"));
+	// 确保检查 - 展示布尔值和条件信息的格式化
+	bool bShouldBeValid = true;
+	FText ErrorContext = FText::FromString(TEXT("初始化阶段"));
+	LE_ENSURE(SomeObject != nullptr, LogGameCoreMemory, Warning, TEXT("Object is null but continuing, expected valid: {}, context: {}"), bShouldBeValid, *ErrorContext.ToString());
 
 	// =============================================================================
 	// 调试专用日志示例
 	// =============================================================================
 
 #if UE_BUILD_DEBUG
-	// 这些日志只在 Debug 构建中编译
-	LE_LOG_DEBUG(LogTestUnit, TEXT("Debug information: %s"), *FString("DebugData"));
-	LE_CLOG_DEBUG(true, LogTestIntegration, TEXT("Debug condition met"));
+	// 这些日志只在 Debug 构建中编译 - 展示调试信息的现代化格式
+	FString DebugData = TEXT("MemoryPool_Status");
+	int32 AllocatedBytes = 2048;
+	double MemoryUsagePercent = 0.67;
+	LE_LOG_DEBUG(LogTestUnit, TEXT("Debug information: {}, allocated: {} bytes, usage: {:.1f}%"), DebugData, AllocatedBytes, MemoryUsagePercent * 100.0);
+
+	bool bConditionMet = true;
+	FName TestSuiteName = FName(TEXT("IntegrationTestSuite_v2"));
+	LE_CLOG_DEBUG(bConditionMet, LogTestIntegration, TEXT("Debug condition met: {}, suite: {}"), bConditionMet, TestSuiteName);
 #endif
 
 	// =============================================================================
@@ -116,31 +144,44 @@ class FExampleGameSystem
 public:
 	void InitializeSystem()
 	{
-		LE_LOG(LogGameCoreMemory, Log, TEXT("Initializing game system..."));
+		FString SystemName = TEXT("GameplaySubsystem");
+		FString Version = TEXT("v1.2.3");
+		LE_LOG(LogGameCoreMemory, Log, TEXT("Initializing game system: {} {}"), *SystemName, *Version);
 
 		// 模拟系统初始化
 		bool bInitSuccess = true;
 
 		if (bInitSuccess)
 		{
-			LE_LOG(LogGameCoreMemory, Log, TEXT("Game system initialized successfully"));
+			double InitTime = 1.234;
+			int32 ModulesLoaded = 15;
+			LE_LOG(LogGameCoreMemory, Log, TEXT("Game system initialized successfully in {:.3f}s, loaded {} modules"), InitTime, ModulesLoaded);
 		}
 		else
 		{
-			LE_LOG(LogGameCoreMemory, Error, TEXT("Failed to initialize game system"));
+			FString ErrorCode = TEXT("INIT_ERR_001");
+			FText ErrorMessage = FText::FromString(TEXT("模块依赖失败"));
+			LE_LOG(LogGameCoreMemory, Error, TEXT("Failed to initialize game system: {} - {}"), *ErrorCode, *ErrorMessage.ToString());
 		}
 	}
 
 	void ProcessGameplay()
 	{
-		// AI 系统处理
-		LE_LOG(LogGameAIBehaviorTree, Verbose, TEXT("Processing AI behavior tree"));
+		// AI 系统处理 - 展示 AI 相关参数
+		FName AICharacterName = FName(TEXT("EnemyGuard_01"));
+		int32 ActiveNodes = 7;
+		LE_LOG(LogGameAIBehaviorTree, Verbose, TEXT("Processing AI behavior tree for {}, active nodes: {}"), *AICharacterName.ToString(), ActiveNodes);
 
-		// 物理系统处理
-		LE_LOG(LogGamePhysicsSimulation, Verbose, TEXT("Running physics simulation"));
+		// 物理系统处理 - 展示物理参数
+		float DeltaTime = 0.0166f;
+		int32 ActiveBodies = 234;
+		LE_LOG(LogGamePhysicsSimulation, Verbose, TEXT("Running physics simulation, deltaTime: {:.4f}, bodies: {}"), DeltaTime, ActiveBodies);
 
-		// 渲染系统处理
-		LE_LOG(LogGameRenderingMesh, Verbose, TEXT("Rendering frame meshes"));
+		// 渲染系统处理 - 展示渲染统计
+		int32 MeshCount = 156;
+		int32 TriangleCount = 45678;
+		float FrameTime = 16.67f;
+		LE_LOG(LogGameRenderingMesh, Verbose, TEXT("Rendering frame: {} meshes, {} triangles, frame time: {:.2f}ms"), MeshCount, TriangleCount, FrameTime);
 	}
 
 	void HandleNetworking()
