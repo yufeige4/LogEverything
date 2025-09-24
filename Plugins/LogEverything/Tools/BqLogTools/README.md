@@ -35,7 +35,7 @@ Editor.Tools.Blueprint
 ```
 
 ## 生成输出
-工具会在 Generated/ 目录生成 LogEverythingLogger.h 文件，包含：
+工具会在 Source/Generated/ 目录生成 LogEverythingLogger.h 文件，包含：
 - LogEverythingLogger 类定义
 - 层级化的类别结构
 - 静态 constexpr 类别句柄
