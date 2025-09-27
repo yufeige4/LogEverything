@@ -26,10 +26,10 @@ setlocal enabledelayedexpansion
 
 REM Get script directory
 set "SCRIPT_DIR=%~dp0"
-set "PLUGIN_ROOT=%SCRIPT_DIR%.."
+set "PLUGIN_ROOT=%SCRIPT_DIR%\..\.."
 set "CONFIG_FILE=%PLUGIN_ROOT%\Config\LogEverythingCategories.txt"
 set "GENERATED_DIR=%PLUGIN_ROOT%\Source\Generated"
-set "TOOL_PATH=%SCRIPT_DIR%BqLogTools\BqLog_CategoryLogGenerator.exe"
+set "TOOL_PATH=%SCRIPT_DIR%\BqLog_CategoryLogGenerator.exe"
 
 echo === LogEverything Category Code Generator ===
 echo.

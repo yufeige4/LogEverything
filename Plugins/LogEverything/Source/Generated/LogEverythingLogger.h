@@ -35,219 +35,63 @@ namespace bq {
 
         struct LogEverythingLogger_category_config
         {
-            const char* names[70] = {
+            const char* names[18] = {
                         ""
+                        , "Engine"
                         , "Game"
-                        , "Game.Core"
-                        , "Game.Core.Memory"
-                        , "Game.Core.Threading"
-                        , "Game.Core.Performance"
-                        , "Game.Core.Initialization"
                         , "Game.Combat"
                         , "Game.Combat.Damage"
                         , "Game.Combat.Skill"
                         , "Game.Combat.Input"
-                        , "Game.Combat.Animation"
-                        , "Game.Combat.Effects"
+                        , "Game.Animation"
                         , "Game.AI"
                         , "Game.AI.BehaviorTree"
                         , "Game.AI.Pathfinding"
-                        , "Game.AI.Decision"
-                        , "Game.AI.Perception"
-                        , "Game.AI.State"
-                        , "Game.Physics"
-                        , "Game.Physics.Collision"
-                        , "Game.Physics.Simulation"
-                        , "Game.Physics.Interaction"
-                        , "Game.Physics.Performance"
-                        , "Game.Rendering"
-                        , "Game.Rendering.Mesh"
-                        , "Game.Rendering.Material"
-                        , "Game.Rendering.Lighting"
-                        , "Game.Rendering.PostProcess"
-                        , "Game.Rendering.Performance"
-                        , "Game.Network"
-                        , "Game.Network.Replication"
-                        , "Game.Network.Connection"
-                        , "Game.Network.Security"
-                        , "Game.Network.Performance"
-                        , "Game.Audio"
-                        , "Game.Audio.SFX"
-                        , "Game.Audio.Music"
-                        , "Game.Audio.Voice"
-                        , "Game.Audio.Performance"
-                        , "Game.UI"
-                        , "Game.UI.HUD"
-                        , "Game.UI.Menu"
-                        , "Game.UI.Interaction"
-                        , "Game.UI.Performance"
+                        , "Game.Input"
+                        , "Game.Input.Ability"
+                        , "Game.Input.Movement"
+                        , "Game.Input.Interaction"
                         , "Editor"
-                        , "Editor.Tools"
-                        , "Editor.Tools.Blueprint"
-                        , "Editor.Tools.Animation"
-                        , "Editor.Tools.Asset"
-                        , "Editor.UI"
-                        , "Editor.UI.Inspector"
-                        , "Editor.UI.Viewport"
-                        , "Editor.Asset"
-                        , "Editor.Asset.Import"
-                        , "Editor.Asset.Export"
-                        , "Engine"
-                        , "Engine.Core"
-                        , "Engine.Core.Memory"
-                        , "Engine.Core.Threading"
-                        , "Engine.IO"
-                        , "Engine.IO.FileSystem"
-                        , "Engine.IO.Network"
                         , "Test"
-                        , "Test.Unit"
-                        , "Test.Integration"
-                        , "Test.Performance"
-                        , "Test.Benchmark"
-                        , "Test.System"
-                        , "Test.System.Basic"
+                        , "Test.LogSystem"
             };
         };
 
         struct EBCO LogEverythingLogger_category_root
         {
             struct EBCO : public LogEverythingLogger_category_base<1> {
-                struct EBCO : public LogEverythingLogger_category_base<2> {
-                    struct EBCO : public LogEverythingLogger_category_base<3> {
-                    } Memory;    //Game.Core.Memory
-                    struct EBCO : public LogEverythingLogger_category_base<4> {
-                    } Threading;    //Game.Core.Threading
-                    struct EBCO : public LogEverythingLogger_category_base<5> {
-                    } Performance;    //Game.Core.Performance
-                    struct EBCO : public LogEverythingLogger_category_base<6> {
-                    } Initialization;    //Game.Core.Initialization
-                } Core;    //Game.Core
-                struct EBCO : public LogEverythingLogger_category_base<7> {
-                    struct EBCO : public LogEverythingLogger_category_base<8> {
-                    } Damage;    //Game.Combat.Damage
-                    struct EBCO : public LogEverythingLogger_category_base<9> {
-                    } Skill;    //Game.Combat.Skill
-                    struct EBCO : public LogEverythingLogger_category_base<10> {
-                    } Input;    //Game.Combat.Input
-                    struct EBCO : public LogEverythingLogger_category_base<11> {
-                    } Animation;    //Game.Combat.Animation
-                    struct EBCO : public LogEverythingLogger_category_base<12> {
-                    } Effects;    //Game.Combat.Effects
-                } Combat;    //Game.Combat
-                struct EBCO : public LogEverythingLogger_category_base<13> {
-                    struct EBCO : public LogEverythingLogger_category_base<14> {
-                    } BehaviorTree;    //Game.AI.BehaviorTree
-                    struct EBCO : public LogEverythingLogger_category_base<15> {
-                    } Pathfinding;    //Game.AI.Pathfinding
-                    struct EBCO : public LogEverythingLogger_category_base<16> {
-                    } Decision;    //Game.AI.Decision
-                    struct EBCO : public LogEverythingLogger_category_base<17> {
-                    } Perception;    //Game.AI.Perception
-                    struct EBCO : public LogEverythingLogger_category_base<18> {
-                    } State;    //Game.AI.State
-                } AI;    //Game.AI
-                struct EBCO : public LogEverythingLogger_category_base<19> {
-                    struct EBCO : public LogEverythingLogger_category_base<20> {
-                    } Collision;    //Game.Physics.Collision
-                    struct EBCO : public LogEverythingLogger_category_base<21> {
-                    } Simulation;    //Game.Physics.Simulation
-                    struct EBCO : public LogEverythingLogger_category_base<22> {
-                    } Interaction;    //Game.Physics.Interaction
-                    struct EBCO : public LogEverythingLogger_category_base<23> {
-                    } Performance;    //Game.Physics.Performance
-                } Physics;    //Game.Physics
-                struct EBCO : public LogEverythingLogger_category_base<24> {
-                    struct EBCO : public LogEverythingLogger_category_base<25> {
-                    } Mesh;    //Game.Rendering.Mesh
-                    struct EBCO : public LogEverythingLogger_category_base<26> {
-                    } Material;    //Game.Rendering.Material
-                    struct EBCO : public LogEverythingLogger_category_base<27> {
-                    } Lighting;    //Game.Rendering.Lighting
-                    struct EBCO : public LogEverythingLogger_category_base<28> {
-                    } PostProcess;    //Game.Rendering.PostProcess
-                    struct EBCO : public LogEverythingLogger_category_base<29> {
-                    } Performance;    //Game.Rendering.Performance
-                } Rendering;    //Game.Rendering
-                struct EBCO : public LogEverythingLogger_category_base<30> {
-                    struct EBCO : public LogEverythingLogger_category_base<31> {
-                    } Replication;    //Game.Network.Replication
-                    struct EBCO : public LogEverythingLogger_category_base<32> {
-                    } Connection;    //Game.Network.Connection
-                    struct EBCO : public LogEverythingLogger_category_base<33> {
-                    } Security;    //Game.Network.Security
-                    struct EBCO : public LogEverythingLogger_category_base<34> {
-                    } Performance;    //Game.Network.Performance
-                } Network;    //Game.Network
-                struct EBCO : public LogEverythingLogger_category_base<35> {
-                    struct EBCO : public LogEverythingLogger_category_base<36> {
-                    } SFX;    //Game.Audio.SFX
-                    struct EBCO : public LogEverythingLogger_category_base<37> {
-                    } Music;    //Game.Audio.Music
-                    struct EBCO : public LogEverythingLogger_category_base<38> {
-                    } Voice;    //Game.Audio.Voice
-                    struct EBCO : public LogEverythingLogger_category_base<39> {
-                    } Performance;    //Game.Audio.Performance
-                } Audio;    //Game.Audio
-                struct EBCO : public LogEverythingLogger_category_base<40> {
-                    struct EBCO : public LogEverythingLogger_category_base<41> {
-                    } HUD;    //Game.UI.HUD
-                    struct EBCO : public LogEverythingLogger_category_base<42> {
-                    } Menu;    //Game.UI.Menu
-                    struct EBCO : public LogEverythingLogger_category_base<43> {
-                    } Interaction;    //Game.UI.Interaction
-                    struct EBCO : public LogEverythingLogger_category_base<44> {
-                    } Performance;    //Game.UI.Performance
-                } UI;    //Game.UI
-            } Game;    //Game
-            struct EBCO : public LogEverythingLogger_category_base<45> {
-                struct EBCO : public LogEverythingLogger_category_base<46> {
-                    struct EBCO : public LogEverythingLogger_category_base<47> {
-                    } Blueprint;    //Editor.Tools.Blueprint
-                    struct EBCO : public LogEverythingLogger_category_base<48> {
-                    } Animation;    //Editor.Tools.Animation
-                    struct EBCO : public LogEverythingLogger_category_base<49> {
-                    } Asset;    //Editor.Tools.Asset
-                } Tools;    //Editor.Tools
-                struct EBCO : public LogEverythingLogger_category_base<50> {
-                    struct EBCO : public LogEverythingLogger_category_base<51> {
-                    } Inspector;    //Editor.UI.Inspector
-                    struct EBCO : public LogEverythingLogger_category_base<52> {
-                    } Viewport;    //Editor.UI.Viewport
-                } UI;    //Editor.UI
-                struct EBCO : public LogEverythingLogger_category_base<53> {
-                    struct EBCO : public LogEverythingLogger_category_base<54> {
-                    } Import;    //Editor.Asset.Import
-                    struct EBCO : public LogEverythingLogger_category_base<55> {
-                    } Export;    //Editor.Asset.Export
-                } Asset;    //Editor.Asset
-            } Editor;    //Editor
-            struct EBCO : public LogEverythingLogger_category_base<56> {
-                struct EBCO : public LogEverythingLogger_category_base<57> {
-                    struct EBCO : public LogEverythingLogger_category_base<58> {
-                    } Memory;    //Engine.Core.Memory
-                    struct EBCO : public LogEverythingLogger_category_base<59> {
-                    } Threading;    //Engine.Core.Threading
-                } Core;    //Engine.Core
-                struct EBCO : public LogEverythingLogger_category_base<60> {
-                    struct EBCO : public LogEverythingLogger_category_base<61> {
-                    } FileSystem;    //Engine.IO.FileSystem
-                    struct EBCO : public LogEverythingLogger_category_base<62> {
-                    } Network;    //Engine.IO.Network
-                } IO;    //Engine.IO
             } Engine;    //Engine
-            struct EBCO : public LogEverythingLogger_category_base<63> {
-                struct EBCO : public LogEverythingLogger_category_base<64> {
-                } Unit;    //Test.Unit
-                struct EBCO : public LogEverythingLogger_category_base<65> {
-                } Integration;    //Test.Integration
-                struct EBCO : public LogEverythingLogger_category_base<66> {
-                } Performance;    //Test.Performance
-                struct EBCO : public LogEverythingLogger_category_base<67> {
-                } Benchmark;    //Test.Benchmark
-                struct EBCO : public LogEverythingLogger_category_base<68> {
-                    struct EBCO : public LogEverythingLogger_category_base<69> {
-                    } Basic;    //Test.System.Basic
-                } System;    //Test.System
+            struct EBCO : public LogEverythingLogger_category_base<2> {
+                struct EBCO : public LogEverythingLogger_category_base<3> {
+                    struct EBCO : public LogEverythingLogger_category_base<4> {
+                    } Damage;    //Game.Combat.Damage
+                    struct EBCO : public LogEverythingLogger_category_base<5> {
+                    } Skill;    //Game.Combat.Skill
+                    struct EBCO : public LogEverythingLogger_category_base<6> {
+                    } Input;    //Game.Combat.Input
+                } Combat;    //Game.Combat
+                struct EBCO : public LogEverythingLogger_category_base<7> {
+                } Animation;    //Game.Animation
+                struct EBCO : public LogEverythingLogger_category_base<8> {
+                    struct EBCO : public LogEverythingLogger_category_base<9> {
+                    } BehaviorTree;    //Game.AI.BehaviorTree
+                    struct EBCO : public LogEverythingLogger_category_base<10> {
+                    } Pathfinding;    //Game.AI.Pathfinding
+                } AI;    //Game.AI
+                struct EBCO : public LogEverythingLogger_category_base<11> {
+                    struct EBCO : public LogEverythingLogger_category_base<12> {
+                    } Ability;    //Game.Input.Ability
+                    struct EBCO : public LogEverythingLogger_category_base<13> {
+                    } Movement;    //Game.Input.Movement
+                    struct EBCO : public LogEverythingLogger_category_base<14> {
+                    } Interaction;    //Game.Input.Interaction
+                } Input;    //Game.Input
+            } Game;    //Game
+            struct EBCO : public LogEverythingLogger_category_base<15> {
+            } Editor;    //Editor
+            struct EBCO : public LogEverythingLogger_category_base<16> {
+                struct EBCO : public LogEverythingLogger_category_base<17> {
+                } LogSystem;    //Test.LogSystem
             } Test;    //Test
         };
 
@@ -330,7 +174,7 @@ namespace bq {
 
     inline LogEverythingLogger LogEverythingLogger::create_log(const bq::string& log_name, const bq::string& config_content)
     {
-        uint64_t log_id = api::__api_create_log(log_name.c_str(), config_content.c_str(), 70, LogEverythingLogger_category_root_holder<void>::config_.names);
+        uint64_t log_id = api::__api_create_log(log_name.c_str(), config_content.c_str(), 18, LogEverythingLogger_category_root_holder<void>::config_.names);
         log result = get_log_by_id(log_id);
         return result;
     }
@@ -343,7 +187,7 @@ namespace bq {
             return result;
         }
         //check categories
-        if (result.get_categories_count() != 70)
+        if (result.get_categories_count() != 18)
         {
             return LogEverythingLogger();
         }

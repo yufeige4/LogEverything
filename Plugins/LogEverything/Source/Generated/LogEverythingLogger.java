@@ -123,75 +123,23 @@ public class LogEverythingLogger extends category_log{
     /****************************************************************************************************************/
     private static final String[] category_names = {
                                                        ""
+                                                       , "Engine"
                                                        , "Game"
-                                                       , "Game.Core"
-                                                       , "Game.Core.Memory"
-                                                       , "Game.Core.Threading"
-                                                       , "Game.Core.Performance"
-                                                       , "Game.Core.Initialization"
                                                        , "Game.Combat"
                                                        , "Game.Combat.Damage"
                                                        , "Game.Combat.Skill"
                                                        , "Game.Combat.Input"
-                                                       , "Game.Combat.Animation"
-                                                       , "Game.Combat.Effects"
+                                                       , "Game.Animation"
                                                        , "Game.AI"
                                                        , "Game.AI.BehaviorTree"
                                                        , "Game.AI.Pathfinding"
-                                                       , "Game.AI.Decision"
-                                                       , "Game.AI.Perception"
-                                                       , "Game.AI.State"
-                                                       , "Game.Physics"
-                                                       , "Game.Physics.Collision"
-                                                       , "Game.Physics.Simulation"
-                                                       , "Game.Physics.Interaction"
-                                                       , "Game.Physics.Performance"
-                                                       , "Game.Rendering"
-                                                       , "Game.Rendering.Mesh"
-                                                       , "Game.Rendering.Material"
-                                                       , "Game.Rendering.Lighting"
-                                                       , "Game.Rendering.PostProcess"
-                                                       , "Game.Rendering.Performance"
-                                                       , "Game.Network"
-                                                       , "Game.Network.Replication"
-                                                       , "Game.Network.Connection"
-                                                       , "Game.Network.Security"
-                                                       , "Game.Network.Performance"
-                                                       , "Game.Audio"
-                                                       , "Game.Audio.SFX"
-                                                       , "Game.Audio.Music"
-                                                       , "Game.Audio.Voice"
-                                                       , "Game.Audio.Performance"
-                                                       , "Game.UI"
-                                                       , "Game.UI.HUD"
-                                                       , "Game.UI.Menu"
-                                                       , "Game.UI.Interaction"
-                                                       , "Game.UI.Performance"
+                                                       , "Game.Input"
+                                                       , "Game.Input.Ability"
+                                                       , "Game.Input.Movement"
+                                                       , "Game.Input.Interaction"
                                                        , "Editor"
-                                                       , "Editor.Tools"
-                                                       , "Editor.Tools.Blueprint"
-                                                       , "Editor.Tools.Animation"
-                                                       , "Editor.Tools.Asset"
-                                                       , "Editor.UI"
-                                                       , "Editor.UI.Inspector"
-                                                       , "Editor.UI.Viewport"
-                                                       , "Editor.Asset"
-                                                       , "Editor.Asset.Import"
-                                                       , "Editor.Asset.Export"
-                                                       , "Engine"
-                                                       , "Engine.Core"
-                                                       , "Engine.Core.Memory"
-                                                       , "Engine.Core.Threading"
-                                                       , "Engine.IO"
-                                                       , "Engine.IO.FileSystem"
-                                                       , "Engine.IO.Network"
                                                        , "Test"
-                                                       , "Test.Unit"
-                                                       , "Test.Integration"
-                                                       , "Test.Performance"
-                                                       , "Test.Benchmark"
-                                                       , "Test.System"
-                                                       , "Test.System.Basic"
+                                                       , "Test.LogSystem"
                                                    };
     private static final long categories_count = (long)category_names.length;
     private static class LogEverythingLogger_category_base extends log_category_base
@@ -199,349 +147,89 @@ public class LogEverythingLogger extends category_log{
     }
     public static class LogEverythingLogger_category_root
     {
+        public static class LogEverythingLogger_Engine extends LogEverythingLogger_category_base
+        {
+            public LogEverythingLogger_Engine(){index = 1L;}
+        }
+        public LogEverythingLogger_Engine Engine = new LogEverythingLogger_Engine();     //Engine
         public static class LogEverythingLogger_Game extends LogEverythingLogger_category_base
         {
-            public LogEverythingLogger_Game(){index = 1L;}
-            public static class LogEverythingLogger_Core extends LogEverythingLogger_category_base
-            {
-                public LogEverythingLogger_Core(){index = 2L;}
-                public static class LogEverythingLogger_Memory extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Memory(){index = 3L;}
-                }
-                public LogEverythingLogger_Memory Memory = new LogEverythingLogger_Memory();     //Game.Core.Memory
-                public static class LogEverythingLogger_Threading extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Threading(){index = 4L;}
-                }
-                public LogEverythingLogger_Threading Threading = new LogEverythingLogger_Threading();     //Game.Core.Threading
-                public static class LogEverythingLogger_Performance extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Performance(){index = 5L;}
-                }
-                public LogEverythingLogger_Performance Performance = new LogEverythingLogger_Performance();     //Game.Core.Performance
-                public static class LogEverythingLogger_Initialization extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Initialization(){index = 6L;}
-                }
-                public LogEverythingLogger_Initialization Initialization = new LogEverythingLogger_Initialization();     //Game.Core.Initialization
-            }
-            public LogEverythingLogger_Core Core = new LogEverythingLogger_Core();     //Game.Core
+            public LogEverythingLogger_Game(){index = 2L;}
             public static class LogEverythingLogger_Combat extends LogEverythingLogger_category_base
             {
-                public LogEverythingLogger_Combat(){index = 7L;}
+                public LogEverythingLogger_Combat(){index = 3L;}
                 public static class LogEverythingLogger_Damage extends LogEverythingLogger_category_base
                 {
-                    public LogEverythingLogger_Damage(){index = 8L;}
+                    public LogEverythingLogger_Damage(){index = 4L;}
                 }
                 public LogEverythingLogger_Damage Damage = new LogEverythingLogger_Damage();     //Game.Combat.Damage
                 public static class LogEverythingLogger_Skill extends LogEverythingLogger_category_base
                 {
-                    public LogEverythingLogger_Skill(){index = 9L;}
+                    public LogEverythingLogger_Skill(){index = 5L;}
                 }
                 public LogEverythingLogger_Skill Skill = new LogEverythingLogger_Skill();     //Game.Combat.Skill
                 public static class LogEverythingLogger_Input extends LogEverythingLogger_category_base
                 {
-                    public LogEverythingLogger_Input(){index = 10L;}
+                    public LogEverythingLogger_Input(){index = 6L;}
                 }
                 public LogEverythingLogger_Input Input = new LogEverythingLogger_Input();     //Game.Combat.Input
-                public static class LogEverythingLogger_Animation extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Animation(){index = 11L;}
-                }
-                public LogEverythingLogger_Animation Animation = new LogEverythingLogger_Animation();     //Game.Combat.Animation
-                public static class LogEverythingLogger_Effects extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Effects(){index = 12L;}
-                }
-                public LogEverythingLogger_Effects Effects = new LogEverythingLogger_Effects();     //Game.Combat.Effects
             }
             public LogEverythingLogger_Combat Combat = new LogEverythingLogger_Combat();     //Game.Combat
+            public static class LogEverythingLogger_Animation extends LogEverythingLogger_category_base
+            {
+                public LogEverythingLogger_Animation(){index = 7L;}
+            }
+            public LogEverythingLogger_Animation Animation = new LogEverythingLogger_Animation();     //Game.Animation
             public static class LogEverythingLogger_AI extends LogEverythingLogger_category_base
             {
-                public LogEverythingLogger_AI(){index = 13L;}
+                public LogEverythingLogger_AI(){index = 8L;}
                 public static class LogEverythingLogger_BehaviorTree extends LogEverythingLogger_category_base
                 {
-                    public LogEverythingLogger_BehaviorTree(){index = 14L;}
+                    public LogEverythingLogger_BehaviorTree(){index = 9L;}
                 }
                 public LogEverythingLogger_BehaviorTree BehaviorTree = new LogEverythingLogger_BehaviorTree();     //Game.AI.BehaviorTree
                 public static class LogEverythingLogger_Pathfinding extends LogEverythingLogger_category_base
                 {
-                    public LogEverythingLogger_Pathfinding(){index = 15L;}
+                    public LogEverythingLogger_Pathfinding(){index = 10L;}
                 }
                 public LogEverythingLogger_Pathfinding Pathfinding = new LogEverythingLogger_Pathfinding();     //Game.AI.Pathfinding
-                public static class LogEverythingLogger_Decision extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Decision(){index = 16L;}
-                }
-                public LogEverythingLogger_Decision Decision = new LogEverythingLogger_Decision();     //Game.AI.Decision
-                public static class LogEverythingLogger_Perception extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Perception(){index = 17L;}
-                }
-                public LogEverythingLogger_Perception Perception = new LogEverythingLogger_Perception();     //Game.AI.Perception
-                public static class LogEverythingLogger_State extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_State(){index = 18L;}
-                }
-                public LogEverythingLogger_State State = new LogEverythingLogger_State();     //Game.AI.State
             }
             public LogEverythingLogger_AI AI = new LogEverythingLogger_AI();     //Game.AI
-            public static class LogEverythingLogger_Physics extends LogEverythingLogger_category_base
+            public static class LogEverythingLogger_Input extends LogEverythingLogger_category_base
             {
-                public LogEverythingLogger_Physics(){index = 19L;}
-                public static class LogEverythingLogger_Collision extends LogEverythingLogger_category_base
+                public LogEverythingLogger_Input(){index = 11L;}
+                public static class LogEverythingLogger_Ability extends LogEverythingLogger_category_base
                 {
-                    public LogEverythingLogger_Collision(){index = 20L;}
+                    public LogEverythingLogger_Ability(){index = 12L;}
                 }
-                public LogEverythingLogger_Collision Collision = new LogEverythingLogger_Collision();     //Game.Physics.Collision
-                public static class LogEverythingLogger_Simulation extends LogEverythingLogger_category_base
+                public LogEverythingLogger_Ability Ability = new LogEverythingLogger_Ability();     //Game.Input.Ability
+                public static class LogEverythingLogger_Movement extends LogEverythingLogger_category_base
                 {
-                    public LogEverythingLogger_Simulation(){index = 21L;}
+                    public LogEverythingLogger_Movement(){index = 13L;}
                 }
-                public LogEverythingLogger_Simulation Simulation = new LogEverythingLogger_Simulation();     //Game.Physics.Simulation
+                public LogEverythingLogger_Movement Movement = new LogEverythingLogger_Movement();     //Game.Input.Movement
                 public static class LogEverythingLogger_Interaction extends LogEverythingLogger_category_base
                 {
-                    public LogEverythingLogger_Interaction(){index = 22L;}
+                    public LogEverythingLogger_Interaction(){index = 14L;}
                 }
-                public LogEverythingLogger_Interaction Interaction = new LogEverythingLogger_Interaction();     //Game.Physics.Interaction
-                public static class LogEverythingLogger_Performance extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Performance(){index = 23L;}
-                }
-                public LogEverythingLogger_Performance Performance = new LogEverythingLogger_Performance();     //Game.Physics.Performance
+                public LogEverythingLogger_Interaction Interaction = new LogEverythingLogger_Interaction();     //Game.Input.Interaction
             }
-            public LogEverythingLogger_Physics Physics = new LogEverythingLogger_Physics();     //Game.Physics
-            public static class LogEverythingLogger_Rendering extends LogEverythingLogger_category_base
-            {
-                public LogEverythingLogger_Rendering(){index = 24L;}
-                public static class LogEverythingLogger_Mesh extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Mesh(){index = 25L;}
-                }
-                public LogEverythingLogger_Mesh Mesh = new LogEverythingLogger_Mesh();     //Game.Rendering.Mesh
-                public static class LogEverythingLogger_Material extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Material(){index = 26L;}
-                }
-                public LogEverythingLogger_Material Material = new LogEverythingLogger_Material();     //Game.Rendering.Material
-                public static class LogEverythingLogger_Lighting extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Lighting(){index = 27L;}
-                }
-                public LogEverythingLogger_Lighting Lighting = new LogEverythingLogger_Lighting();     //Game.Rendering.Lighting
-                public static class LogEverythingLogger_PostProcess extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_PostProcess(){index = 28L;}
-                }
-                public LogEverythingLogger_PostProcess PostProcess = new LogEverythingLogger_PostProcess();     //Game.Rendering.PostProcess
-                public static class LogEverythingLogger_Performance extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Performance(){index = 29L;}
-                }
-                public LogEverythingLogger_Performance Performance = new LogEverythingLogger_Performance();     //Game.Rendering.Performance
-            }
-            public LogEverythingLogger_Rendering Rendering = new LogEverythingLogger_Rendering();     //Game.Rendering
-            public static class LogEverythingLogger_Network extends LogEverythingLogger_category_base
-            {
-                public LogEverythingLogger_Network(){index = 30L;}
-                public static class LogEverythingLogger_Replication extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Replication(){index = 31L;}
-                }
-                public LogEverythingLogger_Replication Replication = new LogEverythingLogger_Replication();     //Game.Network.Replication
-                public static class LogEverythingLogger_Connection extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Connection(){index = 32L;}
-                }
-                public LogEverythingLogger_Connection Connection = new LogEverythingLogger_Connection();     //Game.Network.Connection
-                public static class LogEverythingLogger_Security extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Security(){index = 33L;}
-                }
-                public LogEverythingLogger_Security Security = new LogEverythingLogger_Security();     //Game.Network.Security
-                public static class LogEverythingLogger_Performance extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Performance(){index = 34L;}
-                }
-                public LogEverythingLogger_Performance Performance = new LogEverythingLogger_Performance();     //Game.Network.Performance
-            }
-            public LogEverythingLogger_Network Network = new LogEverythingLogger_Network();     //Game.Network
-            public static class LogEverythingLogger_Audio extends LogEverythingLogger_category_base
-            {
-                public LogEverythingLogger_Audio(){index = 35L;}
-                public static class LogEverythingLogger_SFX extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_SFX(){index = 36L;}
-                }
-                public LogEverythingLogger_SFX SFX = new LogEverythingLogger_SFX();     //Game.Audio.SFX
-                public static class LogEverythingLogger_Music extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Music(){index = 37L;}
-                }
-                public LogEverythingLogger_Music Music = new LogEverythingLogger_Music();     //Game.Audio.Music
-                public static class LogEverythingLogger_Voice extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Voice(){index = 38L;}
-                }
-                public LogEverythingLogger_Voice Voice = new LogEverythingLogger_Voice();     //Game.Audio.Voice
-                public static class LogEverythingLogger_Performance extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Performance(){index = 39L;}
-                }
-                public LogEverythingLogger_Performance Performance = new LogEverythingLogger_Performance();     //Game.Audio.Performance
-            }
-            public LogEverythingLogger_Audio Audio = new LogEverythingLogger_Audio();     //Game.Audio
-            public static class LogEverythingLogger_UI extends LogEverythingLogger_category_base
-            {
-                public LogEverythingLogger_UI(){index = 40L;}
-                public static class LogEverythingLogger_HUD extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_HUD(){index = 41L;}
-                }
-                public LogEverythingLogger_HUD HUD = new LogEverythingLogger_HUD();     //Game.UI.HUD
-                public static class LogEverythingLogger_Menu extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Menu(){index = 42L;}
-                }
-                public LogEverythingLogger_Menu Menu = new LogEverythingLogger_Menu();     //Game.UI.Menu
-                public static class LogEverythingLogger_Interaction extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Interaction(){index = 43L;}
-                }
-                public LogEverythingLogger_Interaction Interaction = new LogEverythingLogger_Interaction();     //Game.UI.Interaction
-                public static class LogEverythingLogger_Performance extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Performance(){index = 44L;}
-                }
-                public LogEverythingLogger_Performance Performance = new LogEverythingLogger_Performance();     //Game.UI.Performance
-            }
-            public LogEverythingLogger_UI UI = new LogEverythingLogger_UI();     //Game.UI
+            public LogEverythingLogger_Input Input = new LogEverythingLogger_Input();     //Game.Input
         }
         public LogEverythingLogger_Game Game = new LogEverythingLogger_Game();     //Game
         public static class LogEverythingLogger_Editor extends LogEverythingLogger_category_base
         {
-            public LogEverythingLogger_Editor(){index = 45L;}
-            public static class LogEverythingLogger_Tools extends LogEverythingLogger_category_base
-            {
-                public LogEverythingLogger_Tools(){index = 46L;}
-                public static class LogEverythingLogger_Blueprint extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Blueprint(){index = 47L;}
-                }
-                public LogEverythingLogger_Blueprint Blueprint = new LogEverythingLogger_Blueprint();     //Editor.Tools.Blueprint
-                public static class LogEverythingLogger_Animation extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Animation(){index = 48L;}
-                }
-                public LogEverythingLogger_Animation Animation = new LogEverythingLogger_Animation();     //Editor.Tools.Animation
-                public static class LogEverythingLogger_Asset extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Asset(){index = 49L;}
-                }
-                public LogEverythingLogger_Asset Asset = new LogEverythingLogger_Asset();     //Editor.Tools.Asset
-            }
-            public LogEverythingLogger_Tools Tools = new LogEverythingLogger_Tools();     //Editor.Tools
-            public static class LogEverythingLogger_UI extends LogEverythingLogger_category_base
-            {
-                public LogEverythingLogger_UI(){index = 50L;}
-                public static class LogEverythingLogger_Inspector extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Inspector(){index = 51L;}
-                }
-                public LogEverythingLogger_Inspector Inspector = new LogEverythingLogger_Inspector();     //Editor.UI.Inspector
-                public static class LogEverythingLogger_Viewport extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Viewport(){index = 52L;}
-                }
-                public LogEverythingLogger_Viewport Viewport = new LogEverythingLogger_Viewport();     //Editor.UI.Viewport
-            }
-            public LogEverythingLogger_UI UI = new LogEverythingLogger_UI();     //Editor.UI
-            public static class LogEverythingLogger_Asset extends LogEverythingLogger_category_base
-            {
-                public LogEverythingLogger_Asset(){index = 53L;}
-                public static class LogEverythingLogger_Import extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Import(){index = 54L;}
-                }
-                public LogEverythingLogger_Import Import = new LogEverythingLogger_Import();     //Editor.Asset.Import
-                public static class LogEverythingLogger_Export extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Export(){index = 55L;}
-                }
-                public LogEverythingLogger_Export Export = new LogEverythingLogger_Export();     //Editor.Asset.Export
-            }
-            public LogEverythingLogger_Asset Asset = new LogEverythingLogger_Asset();     //Editor.Asset
+            public LogEverythingLogger_Editor(){index = 15L;}
         }
         public LogEverythingLogger_Editor Editor = new LogEverythingLogger_Editor();     //Editor
-        public static class LogEverythingLogger_Engine extends LogEverythingLogger_category_base
-        {
-            public LogEverythingLogger_Engine(){index = 56L;}
-            public static class LogEverythingLogger_Core extends LogEverythingLogger_category_base
-            {
-                public LogEverythingLogger_Core(){index = 57L;}
-                public static class LogEverythingLogger_Memory extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Memory(){index = 58L;}
-                }
-                public LogEverythingLogger_Memory Memory = new LogEverythingLogger_Memory();     //Engine.Core.Memory
-                public static class LogEverythingLogger_Threading extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Threading(){index = 59L;}
-                }
-                public LogEverythingLogger_Threading Threading = new LogEverythingLogger_Threading();     //Engine.Core.Threading
-            }
-            public LogEverythingLogger_Core Core = new LogEverythingLogger_Core();     //Engine.Core
-            public static class LogEverythingLogger_IO extends LogEverythingLogger_category_base
-            {
-                public LogEverythingLogger_IO(){index = 60L;}
-                public static class LogEverythingLogger_FileSystem extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_FileSystem(){index = 61L;}
-                }
-                public LogEverythingLogger_FileSystem FileSystem = new LogEverythingLogger_FileSystem();     //Engine.IO.FileSystem
-                public static class LogEverythingLogger_Network extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Network(){index = 62L;}
-                }
-                public LogEverythingLogger_Network Network = new LogEverythingLogger_Network();     //Engine.IO.Network
-            }
-            public LogEverythingLogger_IO IO = new LogEverythingLogger_IO();     //Engine.IO
-        }
-        public LogEverythingLogger_Engine Engine = new LogEverythingLogger_Engine();     //Engine
         public static class LogEverythingLogger_Test extends LogEverythingLogger_category_base
         {
-            public LogEverythingLogger_Test(){index = 63L;}
-            public static class LogEverythingLogger_Unit extends LogEverythingLogger_category_base
+            public LogEverythingLogger_Test(){index = 16L;}
+            public static class LogEverythingLogger_LogSystem extends LogEverythingLogger_category_base
             {
-                public LogEverythingLogger_Unit(){index = 64L;}
+                public LogEverythingLogger_LogSystem(){index = 17L;}
             }
-            public LogEverythingLogger_Unit Unit = new LogEverythingLogger_Unit();     //Test.Unit
-            public static class LogEverythingLogger_Integration extends LogEverythingLogger_category_base
-            {
-                public LogEverythingLogger_Integration(){index = 65L;}
-            }
-            public LogEverythingLogger_Integration Integration = new LogEverythingLogger_Integration();     //Test.Integration
-            public static class LogEverythingLogger_Performance extends LogEverythingLogger_category_base
-            {
-                public LogEverythingLogger_Performance(){index = 66L;}
-            }
-            public LogEverythingLogger_Performance Performance = new LogEverythingLogger_Performance();     //Test.Performance
-            public static class LogEverythingLogger_Benchmark extends LogEverythingLogger_category_base
-            {
-                public LogEverythingLogger_Benchmark(){index = 67L;}
-            }
-            public LogEverythingLogger_Benchmark Benchmark = new LogEverythingLogger_Benchmark();     //Test.Benchmark
-            public static class LogEverythingLogger_System extends LogEverythingLogger_category_base
-            {
-                public LogEverythingLogger_System(){index = 68L;}
-                public static class LogEverythingLogger_Basic extends LogEverythingLogger_category_base
-                {
-                    public LogEverythingLogger_Basic(){index = 69L;}
-                }
-                public LogEverythingLogger_Basic Basic = new LogEverythingLogger_Basic();     //Test.System.Basic
-            }
-            public LogEverythingLogger_System System = new LogEverythingLogger_System();     //Test.System
+            public LogEverythingLogger_LogSystem LogSystem = new LogEverythingLogger_LogSystem();     //Test.LogSystem
         }
         public LogEverythingLogger_Test Test = new LogEverythingLogger_Test();     //Test
     }
