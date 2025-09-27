@@ -20,24 +20,39 @@ LogEverything is an Unreal Engine plugin that embeds Tencent's high-performance 
 
 ### Minimal Usage Example
 ```cpp
-// Header
-#include "LELogMacros.h"
-DECLARE_LE_CATEGORY_EXTERN(LogGameCombatSkill, Game.Combat.Skill);
 
-// Source
-#include "LECategoryDefine.h"
-DEFINE_LE_CATEGORY(LogGameCombatSkill);
+// 如何声明一个日志分类
+DECLARE_LE_CATEGORY_EXTERN(LELogGameCombatSkill, Game.Combat.Skill);
+DEFINE_LE_CATEGORY(LELogGameCombatSkill);
 
-// Gameplay code
-void UMyGameplaySystem::TickSystem()
-{
-    LE_LOG(LogGameCombatSkill, Warning,
-           TEXT("Player {} health: {}, multiplier: {.2f}"),
-           PlayerName, PlayerHealth, DamageMultiplier);
+// 任意玩法逻辑
+float PlayerHealth = 15.0f;
+int32 AmmoCount = 0;
+bool bIsEnemyNear = true;
+// 使用常规打印宏
+// 支持多种日志级别包含：Verbose, Debug, Info, Warning, Error, Fatal  
+// 可以限制不同分类具备不同日志等级权限
+LE_LOG(LELogTestLogSystem, Debug, TEXT("Current gameplay state:"));
+// 使用快捷打印宏
+LE_LOG_DEBUG(LELogTestLogSystem, TEXT("- Player health: {:.1f}"), PlayerHealth);
+LE_LOG_DEBUG(LELogTestLogSystem, TEXT("- Ammo count: {}"), AmmoCount);
+LE_LOG_DEBUG(LELogTestLogSystem, TEXT("- Enemy nearby: {}"), bIsEnemyNear ? TEXT("Yes") : TEXT("No"));
+LE_LOG_DEBUG(LELogTestLogSystem, TEXT(""));
 
-    LE_CLOG(PlayerHealth < 20, LogGameCombatSkill, Error,
-            TEXT("Critical health for {}"), PlayerName);
-}
+LE_CLOG_DEBUG(PlayerHealth < 20.0f, LELogGameCombatDamage, TEXT("Player health critically low: {:.1f}"), PlayerHealth);
+LE_CLOG_DEBUG(AmmoCount == 0, LELogGameCombatSkill, TEXT("Ammunition depleted, ranged skills unavailable"));
+LE_CLOG_DEBUG(bIsEnemyNear && PlayerHealth < 50.0f, LELogGameAI, TEXT("Danger: enemy closing in while health is low"));
+
+// 最终输出日志如下
+UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Test.LogSystem]	Current gameplay state:
+UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Test.LogSystem]	- Player health: 15.0
+UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Test.LogSystem]	- Ammo count: 0
+UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Test.LogSystem]	- Enemy nearby: Yes
+UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Test.LogSystem]	
+UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Game.Combat.Damage]	Player health critically low: 15.0
+UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Game.Combat.Skill]	Ammunition depleted, ranged skills unavailable
+UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Game.AI]	Danger: enemy closing in while health is low
+
 ```
 
 ## Runtime Category Management
