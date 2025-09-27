@@ -1,6 +1,6 @@
 ﻿# LogEverything（中文说明）
 
-LogEverything 是一个将腾讯高性能日志库 [BqLog](https://github.com/Tencent/BqLog) 深度集成到 `Unreal Engine` 的插件。它通过提供熟悉的UE风格的日志宏接口，支持层级化分类、异步持久化与零拷贝输出能力，让项目在保留 UE_LOG 体验的同时享受 BqLog 的性能与现代格式化方案。
+LogEverything 是一个将腾讯高性能日志库 [BqLog](https://github.com/Tencent/BqLog) 深度集成到 `Unreal Engine` 的插件。它通过提供熟悉的UE风格的日志宏接口，支持层级化分类、异步持久化与零拷贝输出能力，让项目在保留类似 `UE_LOG` 体验的同时享受 **BqLog** 的性能与现代格式化方案。
 
 > Looking for English documentation? See [README.md](README.md)。
 
