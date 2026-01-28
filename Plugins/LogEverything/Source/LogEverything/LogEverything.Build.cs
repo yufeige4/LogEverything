@@ -82,12 +82,16 @@ public class LogEverything : ModuleRules
 		PublicDependencyModuleNames.AddRange(new string[]
 		{
 			"Core",
-			"CoreUObject"
+			"CoreUObject",
+			"DeveloperSettings"  // UDeveloperSettings 基类所在模块
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]
 		{
-			"Engine"
+			"Engine",
+			"Projects",    // IPluginManager 用于获取插件路径
+			"Json",        // FJsonSerializer 用于 JSON 解析
+			"JsonUtilities"
 		});
 	}
 

@@ -111,8 +111,35 @@ private:
 	/** 初始化分类树 */
 	bool InitializeCategoryTree();
 
+	/**
+	 * 初始化 BqLog 桥接
+	 * Initialize BqLog Bridge
+	 *
+	 * 从 FLEBqLogConfig 配置参数初始化 BqLog 系统
+	 * 包括全局日志级别、缓冲区大小、日志文件路径、输出目标等
+	 * Initialize BqLog system from FLEBqLogConfig configuration
+	 * Including global log level, buffer size, log file path, output targets, etc.
+	 *
+	 * @param Config BqLog 配置参数 / BqLog configuration parameters
+	 * @return 初始化是否成功 / Whether initialization succeeded
+	 */
+	bool InitializeBqLogBridge(const FLEBqLogConfig& Config);
+
 	/** 加载日志设置 */
 	bool LoadLogSettings();
+
+	/**
+	 * 为当前环境加载对应的日志配置 DataAsset
+	 * Load log config DataAsset for current environment
+	 *
+	 * 根据当前的构建环境（Development/Debug/Test/Shipping）和服务器类型（Client/DedicatedServer）
+	 * 从 ULELogEverythingSettings 中获取对应的 DataAsset 引用并加载
+	 * Retrieves and loads corresponding DataAsset from ULELogEverythingSettings based on current
+	 * build environment (Development/Debug/Test/Shipping) and server type (Client/DedicatedServer)
+	 *
+	 * @return 加载的配置 DataAsset 指针（可能为 nullptr）/ Loaded config DataAsset pointer (may be nullptr)
+	 */
+	ULELogConfigAsset* LoadConfigAssetForCurrentEnvironment() const;
 
 	/**
 	 * 从BqLog接口获取分类路径
@@ -127,9 +154,6 @@ private:
 	 * @return 获取是否成功
 	 */
 	bool GetPredefinedCategoryPaths(TArray<FString>& OutCategoryPaths) const;
-
-	/** 应用分类配置 */
-	void ApplyDefaultCategoryConfigurations();
 
 	/** 清理资源 */
 	void Cleanup();

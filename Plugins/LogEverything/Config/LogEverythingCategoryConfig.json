@@ -1,0 +1,102 @@
+{
+  "version": "1.0",
+  "description": "LogEverything Category Configuration",
+  "defaultLevel": "Info",
+  "categories": [
+    {
+      "name": "Editor",
+      "level": "NotSet",
+      "enabled": "NotSet"
+    },
+    {
+      "name": "Engine",
+      "level": "NotSet",
+      "enabled": "NotSet"
+    },
+    {
+      "name": "Game",
+      "level": "Debug",
+      "enabled": "NotSet",
+      "children": [
+        {
+          "name": "AI",
+          "level": "NotSet",
+          "enabled": "NotSet",
+          "children": [
+            {
+              "name": "BehaviorTree",
+              "level": "NotSet",
+              "enabled": "NotSet"
+            },
+            {
+              "name": "Pathfinding",
+              "level": "NotSet",
+              "enabled": "NotSet"
+            }
+          ]
+        },
+        {
+          "name": "Animation",
+          "level": "NotSet",
+          "enabled": "NotSet"
+        },
+        {
+          "name": "Combat",
+          "level": "NotSet",
+          "enabled": "NotSet",
+          "children": [
+            {
+              "name": "Damage",
+              "level": "Verbose",
+              "enabled": "NotSet"
+            },
+            {
+              "name": "Input",
+              "level": "NotSet",
+              "enabled": "NotSet"
+            },
+            {
+              "name": "Skill",
+              "level": "NotSet",
+              "enabled": "NotSet"
+            }
+          ]
+        },
+        {
+          "name": "Input",
+          "level": "NotSet",
+          "enabled": "NotSet",
+          "children": [
+            {
+              "name": "Ability",
+              "level": "NotSet",
+              "enabled": "NotSet"
+            },
+            {
+              "name": "Interaction",
+              "level": "NotSet",
+              "enabled": "NotSet"
+            },
+            {
+              "name": "Movement",
+              "level": "NotSet",
+              "enabled": "NotSet"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Test",
+      "level": "NotSet",
+      "enabled": "NotSet",
+      "children": [
+        {
+          "name": "LogSystem",
+          "level": "NotSet",
+          "enabled": "NotSet"
+        }
+      ]
+    }
+  ]
+}

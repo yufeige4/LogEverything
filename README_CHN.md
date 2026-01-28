@@ -14,9 +14,10 @@ LogEverything 是一个将腾讯高性能日志库 [BqLog](https://github.com/Te
 
 ## 快速开始
 1. **安装插件** – 将 `Plugins/LogEverything` 复制到项目或引擎的 `Plugins/` 目录，并在 `UnealEngine` 插件管理器中启用。
-2. **调整分类（可选）** – 修改 `Config/LogEverythingCategories.txt` 后，运行 `Tools/BqLogTools/GenerateLogEverythingCategories.bat`（或对应平台生成器）刷新 `Source/Generated/LogEverythingLogger.*`。
-3. **编译工程** – 视情况重新生成项目文件，并在编辑器或 CI 流程中完成编译。
-4. **运行验证** – 游戏实例启动时 `ULELogSubsystem` 会加载默认配置、执行一次自检，并将日志写入 `Saved/LogEverything/LE_<进程ID>_*.log`。
+2. **调整分类（可选）** -- 修改 `Config/LogEverythingCategories.txt` 后，运行 `Tools/BqLogTools/GenerateLogEverythingCategories.bat`（或对应平台生成器）刷新 `Source/Generated/LogEverythingLogger.*` 和 `Config/LogEverythingCategoryConfig.json`。
+3. **自定义级别（可选）** -- 编辑 `Config/LogEverythingCategoryConfig.json`，为需要的分类设置 `level` 和 `enabled`。设为 `"NotSet"` 表示继承父节点。格式详情参阅 [JSON 配置文档](Plugins/LogEverything/Tools/BqLogTools/README_CategoryConfig.md)。
+4. **编译工程** -- 视情况重新生成项目文件，并在编辑器或 CI 流程中完成编译。
+5. **运行验证** -- 游戏实例启动时 `ULELogSubsystem` 会加载 JSON 分类配置并初始化 `BqLog`，日志写入 `Saved/LogEverything/LE_<进程ID>_*.log`。
 
 ### 最简使用示例
 ```cpp
@@ -93,6 +94,14 @@ Plugins/LogEverything/
 └─ Tools/                      # 生成器与辅助脚本
 ```
 
+## 0.9.0 新特性
+- 用人类可读的 **JSON 配置文件** (`Config/LogEverythingCategoryConfig.json`) 替代 `ULECategoryConfigNode` UObject 树，作为分类级别与启用状态的配置来源。
+- 新增 `Tools/BqLogTools/GenerateCategoryConfigJson.py`，从 `LogEverythingCategories.txt` 自动生成 JSON，支持**合并模式**（重新生成时保留已有配置）。
+- 精简 `ULELogConfigAsset`，移除所有编辑器 UObject 树回调，DataAsset 现在引用 JSON 路径与 `FLEBqLogConfig`。
+- 初始化完成后，启用 `LogEverything.Debug.LogCategory` 时自动打印完整分类树到日志。
+- JSON 格式详细说明请查看 [JSON 配置文档](Plugins/LogEverything/Tools/BqLogTools/README_CategoryConfig.md)。
+- 详细变更请查看 [v0.9.0 更新日志（中文）](ChangeLogs/CHANGELOG_v0.9.0_CHN.md)。
+
 ## 0.7.0 新特性
 - 新增 `ULELogSubsystem` 作为运行时控制层，负责级别管理、启停传播与统计输出。
 - 引入 `ULECategoryTree` 同步 `BqLog` 分类，实现继承校验、批量操作与调试导出。
@@ -108,5 +117,5 @@ Plugins/LogEverything/
 ## 支持、规划与贡献
 - **问题 / 功能需求** – 欢迎在 `GitHub` 提交 `Issue`，并附上复现步骤。
 - **代码贡献** – 提交 `Pull Request` 时请注明测试过的 `UnealEngine` 版本与平台，并附上关键日志。
-- **后续路线** – 计划在后续版本支持按不同环境（`开发`、`QA`、`正式`、`专用服务器`）定制分类/级别策略，并补充配置资产。
-- **更新记录** – 历史版本详见 [v0.7.0 更新日志（中文）](ChangeLogs/CHANGELOG_v0.7.0_CHN.md) 及更早条目。
+- **后续路线** -- 下一版本计划进行日志性能测试与分析；后续支持按不同环境（`开发`、`QA`、`正式`、`专用服务器`）定制分类/级别策略，并补充配置资产。
+- **更新记录** -- 历史版本详见 [v0.9.0 更新日志（中文）](ChangeLogs/CHANGELOG_v0.9.0_CHN.md)、[v0.7.0 更新日志（中文）](ChangeLogs/CHANGELOG_v0.7.0_CHN.md) 及更早条目。

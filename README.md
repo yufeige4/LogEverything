@@ -14,9 +14,10 @@ LogEverything is an Unreal Engine plugin that embeds Tencent's high-performance 
 
 ## Getting Started
 1. **Install** – Copy `Plugins/LogEverything` into your project or engine `Plugins/` folder and enable the plugin via `LogEverything.uplugin` or the `Unreal Editor` plugin browser.
-2. **Configure (optional)** – Edit `Config/LogEverythingCategories.txt` to match your hierarchy and run `Tools/BqLogTools/GenerateLogEverythingCategories.bat` (or the platform-specific generator) to refresh `Source/Generated/LogEverythingLogger.*`.
-3. **Build** – Regenerate project files if required and compile from the editor or your preferred build pipeline.
-4. **Run** – When the game instance boots, `ULELogSubsystem` initializes **BqLog** with default settings, executes a smoke test, and writes logs under `Saved/LogEverything/LE_<ProcessId>_*.log`.
+2. **Configure (optional)** – Edit `Config/LogEverythingCategories.txt` to match your hierarchy and run `Tools/BqLogTools/GenerateLogEverythingCategories.bat` (or the platform-specific generator) to refresh `Source/Generated/LogEverythingLogger.*` and `Config/LogEverythingCategoryConfig.json`.
+3. **Customize levels (optional)** – Edit `Config/LogEverythingCategoryConfig.json` to set per-category `level` and `enabled` overrides. Fields set to `"NotSet"` inherit from the parent node.
+4. **Build** – Regenerate project files if required and compile from the editor or your preferred build pipeline.
+5. **Run** – When the game instance boots, `ULELogSubsystem` initializes **BqLog**, loads the JSON category config, and writes logs under `Saved/LogEverything/LE_<ProcessId>_*.log`.
 
 ### Minimal Usage Example
 ```cpp
@@ -73,7 +74,8 @@ All logging macros pass through `ULogEverythingUtils::InternalLogImp`, so verbos
 Toggle verbose filtering traces with the `LogEverything.Debug.LogCategory` console variable.
 
 ## Tooling & Maintenance
-- **Category generators** – `Tools/BqLogTools/` bundles prebuilt generators for `Windows`, `Linux`, and `macOS` plus convenience scripts (e.g. `GenerateLogEverythingCategories.bat`).
+- **Category generators** -- `Tools/BqLogTools/` bundles prebuilt generators for `Windows`, `Linux`, and `macOS` plus convenience scripts (e.g. `GenerateLogEverythingCategories.bat`).
+- **JSON config generator** -- `Tools/BqLogTools/GenerateCategoryConfigJson.py` auto-generates `Config/LogEverythingCategoryConfig.json` with merge support. See [JSON Config Reference](Plugins/LogEverything/Tools/BqLogTools/README_CategoryConfig.md) for the full schema.
 
 ## Repository Layout
 ```
@@ -93,7 +95,14 @@ Plugins/LogEverything/
 └─ Tools/                      # Generators and helper scripts
 ```
 
-## What’s New in 0.7.0
+## What's New in 0.9.0
+- Replaced the `ULECategoryConfigNode` UObject tree with a human-readable **JSON configuration** (`Config/LogEverythingCategoryConfig.json`) for per-category level and enablement overrides.
+- Added `Tools/BqLogTools/GenerateCategoryConfigJson.py` to auto-generate JSON from `LogEverythingCategories.txt` with **merge mode** that preserves existing settings on regeneration.
+- Streamlined `ULELogConfigAsset` by removing all editor-only UObject tree callbacks; the DataAsset now references a JSON path alongside `FLEBqLogConfig`.
+- Category tree is printed to the log on initialization when `LogEverything.Debug.LogCategory` is enabled.
+- Detailed release notes: [v0.9.0 Changelog (EN)](ChangeLogs/CHANGELOG_v0.9.0_EN.md).
+
+## What's New in 0.7.0
 - Added `ULELogSubsystem` as the runtime governance layer for levels, enablement, propagation, and statistics.
 - Introduced `ULECategoryTree` to mirror **BqLog** categories, enabling inheritance-aware checks, batch toggles, and debug exports.
 - Centralized logging flows through `ULogEverythingUtils::InternalLogImp`, ensuring filters run before formatting while maintaining zero-copy emission into **BqLog**.
@@ -108,5 +117,5 @@ Plugins/LogEverything/
 ## Support & Roadmap
 - **Issues / feature requests** – Open a `GitHub` issue with reproduction steps or desired behaviour.
 - **Pull requests** – Mention tested `UnrealEngine` versions/platforms and attach relevant logs for significant changes.
-- **Upcoming roadmap** – Environment-specific category and verbosity policies (`development`, `QA`, `shipping`, `dedicated server`) plus configurable settings assets.
-- **Changelogs** – Review [v0.7.0 Changelog (EN)](ChangeLogs/CHANGELOG_v0.7.0_EN.md) and earlier files for version history.
+- **Upcoming roadmap** -- Logging performance benchmarks and profiling; environment-specific category and verbosity policies (`development`, `QA`, `shipping`, `dedicated server`) plus configurable settings assets.
+- **Changelogs** – Review [v0.9.0 Changelog (EN)](ChangeLogs/CHANGELOG_v0.9.0_EN.md), [v0.7.0 Changelog (EN)](ChangeLogs/CHANGELOG_v0.7.0_EN.md) and earlier files for version history.

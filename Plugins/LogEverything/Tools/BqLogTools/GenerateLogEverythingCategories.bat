@@ -119,6 +119,24 @@ if exist "%GENERATED_HEADER%" (
 
     echo SUCCESS: Category code generation completed!
     echo.
+
+    REM ============================================================
+    REM Generate JSON category config template
+    REM ============================================================
+    set "PYTHON_SCRIPT=%SCRIPT_DIR%\GenerateCategoryConfigJson.py"
+    if exist "%PYTHON_SCRIPT%" (
+        echo.
+        echo === Generating Category Config JSON ===
+        python "%PYTHON_SCRIPT%" --config "%CONFIG_FILE%" --output "%PLUGIN_ROOT%\Config\LogEverythingCategoryConfig.json"
+        if %ERRORLEVEL% neq 0 (
+            echo WARNING: JSON config generation failed, error code: %ERRORLEVEL%
+            echo   This is non-critical. You can run the Python script manually later.
+        )
+        echo.
+    ) else (
+        echo NOTE: GenerateCategoryConfigJson.py not found, skipping JSON config generation
+    )
+
     echo Next Steps:
     echo   1. Recompile LogEverything plugin
     echo   2. Use LE_CATEGORY(Game.Combat.Skill) syntax in your code
