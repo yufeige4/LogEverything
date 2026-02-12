@@ -1,237 +1,314 @@
-# LogEverything Performance Benchmark Report
+# LogEverything 性能测试报告
 
-*中文版本请参阅 [PERFORMANCE_REPORT_CHN.md](PERFORMANCE_REPORT_CHN.md)*
-
-## Executive Summary
-
-This report presents comprehensive performance benchmarks comparing LogEverything's `LE_LOG` macro against Unreal Engine's native `UE_LOG` macro. Testing was conducted using a multi-round methodology with statistical analysis to ensure reliable, reproducible results.
-
-**Key Findings:**
-- LE_LOG achieves **52-73% higher throughput** than UE_LOG across all test scenarios
-- Filter overhead is minimal at **~122 nanoseconds** per filtered call
-- Test results are highly stable with coefficient of variation < 2.2%
-
-**Critical Distinction:** LE_LOG includes full category/level filtering on every call, while UE_LOG does not have this capability. Despite this additional functionality, LE_LOG still outperforms UE_LOG.
+**生成时间**: 2026-02-12 11:52:58
+**测试环境**: Intel(R) Core(TM) i7-14700 (28核), 127.6GB 内存, Windows 11, Development 构建
 
 ---
 
-## Test Environment
+## 1. 测试说明
 
-| Parameter | Value |
-|-----------|-------|
-| **CPU** | Intel Core i7-14700 (28 cores) |
-| **Memory** | 127.6 GB |
-| **Operating System** | Windows 11 |
-| **Build Configuration** | Development |
-| **Rendering** | -nullrhi (disabled) |
-| **GC Verification** | Disabled (-NoVerifyGC) |
-| **Test Framework** | Unreal Engine Automation Test |
-| **Log Backend** | BqLog High-Performance Library |
+### 1.1 LE_LOG 与 UE_LOG 的核心区别
 
----
+**重要说明**: 本测试中所有 LE_LOG 调用都包含完整的日志分类和级别过滤功能：
 
-## Test Methodology
+| 特性 | LE_LOG | UE_LOG |
+|------|--------|--------|
+| 分类级别过滤 | 支持（每次调用都进行分类和级别检查） | 不支持 |
+| 层级化分类 | 支持（如 Game.Combat.Skill） | 不支持 |
+| 运行时动态配置 | 支持（可动态启用/禁用分类） | 不支持 |
+| 格式化方式 | BqLog {} 占位符 | printf 风格 |
 
-### Multi-Round Testing
+这意味着 LE_LOG 在每次日志调用时都会：
+1. 检查日志分类是否启用
+2. 检查当前日志级别是否满足输出条件
+3. 只有通过检查后才会执行实际的日志写入
 
-To eliminate noise and ensure statistical validity:
-- **10 rounds** of testing per scenario
-- **1,000,000 log entries** per round per test case
-- **10,000 warmup calls** before each measurement
-- Results aggregated with **mean, standard deviation, min/max**
+即使在这种额外开销下，LE_LOG 仍然比 UE_LOG 更快。
 
-### Test Suite
+### 1.2 测试参数
 
-| Test ID | Test Name | Description |
-|---------|-----------|-------------|
-| PERF-01 | UE_LOG Baseline | 1M simple text logs using UE_LOG |
-| PERF-02 | LE_LOG Baseline | 1M simple text logs using LE_LOG |
-| PERF-03 | UE_LOG Formatted | 1M logs with int/float/string parameters |
-| PERF-04 | LE_LOG Formatted | 1M logs with int/float/string parameters |
-| PERF-05 | LE_LOG Level Filter | 1M Info logs filtered by Warning threshold |
-| PERF-06 | LE_LOG Category Disabled | 1M logs with category disabled |
-| PERF-07 | UE_LOG Multi-threaded | 4 threads x 250K logs each |
-| PERF-08 | LE_LOG Multi-threaded | 4 threads x 250K logs each |
+| 参数 | 值 |
+|------|-----|
+| 每次测试日志数量 | 1,000,000 条 |
+| 测试轮数 | 10 轮 |
+| 统计方法 | 平均值 +/- 标准差 |
+| 渲染模式 | -nullrhi (无渲染) |
+| GC 验证 | 已禁用 (-NoVerifyGC) |
 
 ---
 
-## Results
+## 2. 测试内容
 
-### Throughput Comparison
+本次测试包含 8 个测试用例，分为 4 组对比：
 
-| Scenario | UE_LOG Throughput | LE_LOG Throughput | Improvement |
-|----------|------------------|------------------|-------------|
-| **Baseline** | 1.66M/s (600.95ms) | 2.54M/s (394.25ms) | **+52%** |
-| **Formatted** | 1.46M/s (683.26ms) | 2.53M/s (395.53ms) | **+73%** |
-| **Multi-threaded** | 4.93M/s (203.46ms) | 5.37M/s (186.56ms) | **+9%** |
+### 2.1 测试用例说明
 
-### Per-Log Latency Comparison
+| 编号 | 测试名称 | 说明 |
+|------|----------|------|
+| PERF-01 | UE_LOG 基准测试 | 使用 UE_LOG 宏记录 100 万条简单文本日志，测量原生日志系统的基础性能 |
+| PERF-02 | LE_LOG 基准测试 | 使用 LE_LOG 宏记录 100 万条简单文本日志，测量 LogEverything 系统的基础性能 |
+| PERF-03 | UE_LOG 格式化测试 | 使用 UE_LOG 宏记录带格式化参数的日志（整数、浮点数、字符串），测量格式化开销 |
+| PERF-04 | LE_LOG 格式化测试 | 使用 LE_LOG 宏记录带格式化参数的日志，测量 BqLog 格式化性能 |
+| PERF-05 | LE_LOG 级别过滤测试 | 设置全局日志级别为 Warning，记录 Info 级别日志（被过滤），测量级别检查开销 |
+| PERF-06 | LE_LOG 分类禁用测试 | 禁用测试分类后记录日志（被过滤），测量分类检查开销 |
+| PERF-07 | UE_LOG 多线程测试 | 4 个线程并行使用 UE_LOG 记录日志，测量多线程下的性能表现 |
+| PERF-08 | LE_LOG 多线程测试 | 4 个线程并行使用 LE_LOG 记录日志，测量多线程下的性能表现 |
 
-Average time cost per single log call (lower is better):
+### 2.2 测试分组
 
-| Scenario | UE_LOG Latency | LE_LOG Latency | Reduction |
-|----------|----------------|----------------|-----------|
-| **Baseline** | 601 ns | 394 ns | **-34%** |
-| **Formatted** | 683 ns | 396 ns | **-42%** |
-| **Multi-threaded** | 203 ns | 187 ns | **-8%** |
-
-**Note**: LE_LOG latency includes full category/level filtering overhead on every call.
-
-### Statistical Summary
-
-| Test Case | Mean Time | Std Dev | Mean Throughput | CV |
-|-----------|-----------|---------|-----------------|-----|
-| UE_LOG Baseline | 600.95ms | 8.58ms | 1,664,350/s | 1.43% |
-| LE_LOG Baseline | 394.25ms | 8.82ms | 2,537,526/s | 2.14% |
-| UE_LOG Formatted | 683.26ms | 13.42ms | 1,464,066/s | 1.96% |
-| LE_LOG Formatted | 395.53ms | 4.97ms | 2,528,640/s | 1.24% |
-| UE_LOG Multi-thread | 203.46ms | 12.14ms | 4,929,497/s | 5.96% |
-| LE_LOG Multi-thread | 186.56ms | 7.37ms | 5,367,587/s | 3.90% |
-
-### Filter Overhead
-
-| Filter Type | Per-call Overhead | Throughput |
-|-------------|------------------|------------|
-| Level Filtering | **122 ns** | 8,168,971/s |
-| Category Disabled | **122 ns** | 8,172,197/s |
-
-When logs are filtered out, each call consumes only ~122 nanoseconds - negligible overhead that enables aggressive logging in production code without performance concerns.
+1. **基准性能对比** (PERF-01 vs PERF-02): 简单日志记录的基础性能
+2. **格式化性能对比** (PERF-03 vs PERF-04): 带参数格式化的性能
+3. **过滤性能测试** (PERF-05, PERF-06): 日志过滤的开销
+4. **多线程性能对比** (PERF-07 vs PERF-08): 并发场景下的性能
 
 ---
 
-## Visualizations
+## 3. 每轮测试结果
 
-### Throughput Comparison
+### 第 1 轮
 
-![Throughput Comparison](perf_throughput_comparison_en.png)
+| 测试用例 | 总耗时 (ms) | 平均延迟 (ns) | 吞吐量 (/秒) |
+|----------|-------------|---------------|---------------|
+| UE_LOG 基准测试 | 595.80 | 596 | 1,678,422 |
+| LE_LOG 基准测试 | 393.52 | 394 | 2,541,166 |
+| UE_LOG 格式化测试 | 687.22 | 687 | 1,455,128 |
+| LE_LOG 格式化测试 | 403.58 | 404 | 2,477,822 |
+| LE_LOG 级别过滤测试 | 124.01 | 124 | 8,063,716 |
+| LE_LOG 分类禁用测试 | 122.75 | 123 | 8,146,440 |
+| UE_LOG 多线程测试 | 197.00 | 197 | 5,076,145 |
+| LE_LOG 多线程测试 | 194.37 | 194 | 5,144,721 |
 
-**Chart Description:**
-- Left panel: Absolute throughput comparison (millions of logs per second)
-- Error bars represent standard deviation across 10 rounds
-- Right panel: Relative performance improvement percentage
+### 第 2 轮
 
-### Round-by-Round Trends
+| 测试用例 | 总耗时 (ms) | 平均延迟 (ns) | 吞吐量 (/秒) |
+|----------|-------------|---------------|---------------|
+| UE_LOG 基准测试 | 589.47 | 589 | 1,696,450 |
+| LE_LOG 基准测试 | 395.53 | 396 | 2,528,281 |
+| UE_LOG 格式化测试 | 668.83 | 669 | 1,495,146 |
+| LE_LOG 格式化测试 | 394.44 | 394 | 2,535,226 |
+| LE_LOG 级别过滤测试 | 122.14 | 122 | 8,187,547 |
+| LE_LOG 分类禁用测试 | 121.79 | 122 | 8,210,875 |
+| UE_LOG 多线程测试 | 206.21 | 206 | 4,849,442 |
+| LE_LOG 多线程测试 | 190.23 | 190 | 5,256,825 |
 
-![Rounds Trend](perf_rounds_trend_en.png)
+### 第 3 轮
 
-**Chart Description:**
-- Shows throughput consistency across all 10 test rounds
-- Flat curves indicate stable, reliable measurements
-- Minor variations within expected statistical bounds
+| 测试用例 | 总耗时 (ms) | 平均延迟 (ns) | 吞吐量 (/秒) |
+|----------|-------------|---------------|---------------|
+| UE_LOG 基准测试 | 612.34 | 612 | 1,633,082 |
+| LE_LOG 基准测试 | 392.74 | 393 | 2,546,184 |
+| UE_LOG 格式化测试 | 676.37 | 676 | 1,478,474 |
+| LE_LOG 格式化测试 | 393.02 | 393 | 2,544,402 |
+| LE_LOG 级别过滤测试 | 121.21 | 121 | 8,249,927 |
+| LE_LOG 分类禁用测试 | 121.03 | 121 | 8,262,189 |
+| UE_LOG 多线程测试 | 192.49 | 192 | 5,195,075 |
+| LE_LOG 多线程测试 | 177.65 | 178 | 5,628,951 |
 
-### Filter Overhead Analysis
+### 第 4 轮
 
-![Filter Overhead](perf_filter_overhead_en.png)
+| 测试用例 | 总耗时 (ms) | 平均延迟 (ns) | 吞吐量 (/秒) |
+|----------|-------------|---------------|---------------|
+| UE_LOG 基准测试 | 604.51 | 605 | 1,654,224 |
+| LE_LOG 基准测试 | 387.32 | 387 | 2,581,833 |
+| UE_LOG 格式化测试 | 669.35 | 669 | 1,493,991 |
+| LE_LOG 格式化测试 | 395.73 | 396 | 2,526,978 |
+| LE_LOG 级别过滤测试 | 122.75 | 123 | 8,146,513 |
+| LE_LOG 分类禁用测试 | 122.69 | 123 | 8,150,956 |
+| UE_LOG 多线程测试 | 204.26 | 204 | 4,895,824 |
+| LE_LOG 多线程测试 | 181.81 | 182 | 5,500,287 |
 
-**Chart Description:**
-- Per-call overhead when logs are filtered (not written)
-- ~122 nanoseconds demonstrates extremely lightweight filtering
+### 第 5 轮
+
+| 测试用例 | 总耗时 (ms) | 平均延迟 (ns) | 吞吐量 (/秒) |
+|----------|-------------|---------------|---------------|
+| UE_LOG 基准测试 | 604.80 | 605 | 1,653,435 |
+| LE_LOG 基准测试 | 418.39 | 418 | 2,390,089 |
+| UE_LOG 格式化测试 | 710.75 | 711 | 1,406,972 |
+| LE_LOG 格式化测试 | 391.84 | 392 | 2,552,065 |
+| LE_LOG 级别过滤测试 | 121.72 | 122 | 8,215,624 |
+| LE_LOG 分类禁用测试 | 123.27 | 123 | 8,112,241 |
+| UE_LOG 多线程测试 | 234.24 | 234 | 4,269,173 |
+| LE_LOG 多线程测试 | 200.07 | 200 | 4,998,161 |
+
+### 第 6 轮
+
+| 测试用例 | 总耗时 (ms) | 平均延迟 (ns) | 吞吐量 (/秒) |
+|----------|-------------|---------------|---------------|
+| UE_LOG 基准测试 | 599.86 | 600 | 1,667,059 |
+| LE_LOG 基准测试 | 391.91 | 392 | 2,551,599 |
+| UE_LOG 格式化测试 | 681.45 | 681 | 1,467,449 |
+| LE_LOG 格式化测试 | 405.24 | 405 | 2,467,701 |
+| LE_LOG 级别过滤测试 | 125.28 | 125 | 7,981,872 |
+| LE_LOG 分类禁用测试 | 123.44 | 123 | 8,101,167 |
+| UE_LOG 多线程测试 | 193.34 | 193 | 5,172,179 |
+| LE_LOG 多线程测试 | 185.99 | 186 | 5,376,734 |
+
+### 第 7 轮
+
+| 测试用例 | 总耗时 (ms) | 平均延迟 (ns) | 吞吐量 (/秒) |
+|----------|-------------|---------------|---------------|
+| UE_LOG 基准测试 | 607.83 | 608 | 1,645,207 |
+| LE_LOG 基准测试 | 389.91 | 390 | 2,564,682 |
+| UE_LOG 格式化测试 | 686.73 | 687 | 1,456,169 |
+| LE_LOG 格式化测试 | 395.97 | 396 | 2,525,458 |
+| LE_LOG 级别过滤测试 | 121.33 | 121 | 8,242,093 |
+| LE_LOG 分类禁用测试 | 122.37 | 122 | 8,172,078 |
+| UE_LOG 多线程测试 | 195.21 | 195 | 5,122,599 |
+| LE_LOG 多线程测试 | 185.36 | 185 | 5,394,779 |
+
+### 第 8 轮
+
+| 测试用例 | 总耗时 (ms) | 平均延迟 (ns) | 吞吐量 (/秒) |
+|----------|-------------|---------------|---------------|
+| UE_LOG 基准测试 | 602.53 | 603 | 1,659,669 |
+| LE_LOG 基准测试 | 389.41 | 389 | 2,568,011 |
+| UE_LOG 格式化测试 | 686.66 | 687 | 1,456,314 |
+| LE_LOG 格式化测试 | 391.97 | 392 | 2,551,232 |
+| LE_LOG 级别过滤测试 | 122.24 | 122 | 8,180,802 |
+| LE_LOG 分类禁用测试 | 121.98 | 122 | 8,197,803 |
+| UE_LOG 多线程测试 | 203.94 | 204 | 4,903,473 |
+| LE_LOG 多线程测试 | 180.67 | 181 | 5,534,864 |
+
+### 第 9 轮
+
+| 测试用例 | 总耗时 (ms) | 平均延迟 (ns) | 吞吐量 (/秒) |
+|----------|-------------|---------------|---------------|
+| UE_LOG 基准测试 | 607.34 | 607 | 1,646,526 |
+| LE_LOG 基准测试 | 393.68 | 394 | 2,540,118 |
+| UE_LOG 格式化测试 | 696.30 | 696 | 1,436,162 |
+| LE_LOG 格式化测试 | 392.20 | 392 | 2,549,725 |
+| LE_LOG 级别过滤测试 | 122.54 | 123 | 8,160,627 |
+| LE_LOG 分类禁用测试 | 122.90 | 123 | 8,136,551 |
+| UE_LOG 多线程测试 | 208.25 | 208 | 4,801,907 |
+| LE_LOG 多线程测试 | 178.14 | 178 | 5,613,575 |
+
+### 第 10 轮
+
+| 测试用例 | 总耗时 (ms) | 平均延迟 (ns) | 吞吐量 (/秒) |
+|----------|-------------|---------------|---------------|
+| UE_LOG 基准测试 | 584.99 | 585 | 1,709,421 |
+| LE_LOG 基准测试 | 390.12 | 390 | 2,563,302 |
+| UE_LOG 格式化测试 | 668.96 | 669 | 1,494,851 |
+| LE_LOG 格式化测试 | 391.27 | 391 | 2,555,790 |
+| LE_LOG 级别过滤测试 | 121.05 | 121 | 8,260,988 |
+| LE_LOG 分类禁用测试 | 121.48 | 121 | 8,231,672 |
+| UE_LOG 多线程测试 | 199.63 | 200 | 5,009,152 |
+| LE_LOG 多线程测试 | 191.32 | 191 | 5,226,971 |
 
 ---
 
-## Analysis
+## 4. 统计分析
 
-### Why LE_LOG is Faster
+### 4.1 汇总统计（平均值 +/- 标准差）
 
-Despite including category/level filtering on every call, LE_LOG outperforms UE_LOG due to:
+| 测试用例 | 平均耗时 | 标准差 | 平均吞吐量 | 吞吐量标准差 |
+|----------|----------|--------|------------|--------------|
+| UE_LOG 基准测试 | 600.95 ms | 8.58 ms | 1,664,350/秒 | 23,974 |
+| LE_LOG 基准测试 | 394.25 ms | 8.82 ms | 2,537,526/秒 | 54,171 |
+| UE_LOG 格式化测试 | 683.26 ms | 13.42 ms | 1,464,066/秒 | 28,419 |
+| LE_LOG 格式化测试 | 395.53 ms | 4.97 ms | 2,528,640/秒 | 31,343 |
+| LE_LOG 级别过滤测试 | 122.43 ms | 1.33 ms | 8,168,971/秒 | 87,995 |
+| LE_LOG 分类禁用测试 | 122.37 ms | 0.79 ms | 8,172,197/秒 | 52,507 |
+| UE_LOG 多线程测试 | 203.46 ms | 12.14 ms | 4,929,497/秒 | 269,793 |
+| LE_LOG 多线程测试 | 186.56 ms | 7.37 ms | 5,367,587/秒 | 209,078 |
 
-1. **Lock-free Ring Buffer**
-   - BqLog uses a high-performance lock-free circular buffer
-   - Minimizes thread contention in multi-threaded scenarios
-   - Explains the +9% improvement in multi-threaded tests
+### 4.2 LE_LOG vs UE_LOG 性能对比
 
-2. **Asynchronous Persistence**
-   - Logs are written to memory buffer first
-   - Background thread handles disk I/O asynchronously
-   - Main thread never blocks on file operations
+注意: LE_LOG 包含分类级别过滤开销，UE_LOG 不包含此功能。
 
-3. **Efficient Formatting**
-   - `{}` placeholder syntax is more efficient than printf-style
-   - Explains the larger +73% improvement in formatted tests
-   - No format string parsing overhead at runtime
+| 测试场景 | UE_LOG | LE_LOG (含过滤) | 性能提升 |
+|----------|--------|-----------------|----------|
+| 基准测试 | 1.66M/秒 | 2.54M/秒 | **+52%** |
+| 格式化测试 | 1.46M/秒 | 2.53M/秒 | **+73%** |
+| 多线程测试 | 4.93M/秒 | 5.37M/秒 | **+9%** |
 
-4. **Lightweight Category Checks**
-   - Category enable/disable checks add only ~120ns
-   - Hash-based category lookup is O(1)
-   - Level comparison is a simple integer operation
+### 4.3 过滤检查开销分析
 
-### Test Stability
+当日志被级别过滤或分类禁用时，LE_LOG 仍需执行检查逻辑。以下是每次日志调用的开销：
 
-- **Average coefficient of variation: 2.2%**
-- Highly consistent results across all 10 rounds
-- Suitable for production performance regression testing
+| 过滤场景 | 每次调用开销 | 说明 |
+|----------|--------------|------|
+| 级别过滤 | **122 纳秒** | 日志级别不满足条件时的检查开销 |
+| 分类禁用 | **122 纳秒** | 日志分类被禁用时的检查开销 |
 
----
-
-## Conclusions
-
-### Performance Summary
-
-| Metric | Value |
-|--------|-------|
-| Baseline improvement | **+52%** faster than UE_LOG |
-| Formatted improvement | **+73%** faster than UE_LOG |
-| Multi-threaded improvement | **+9%** faster than UE_LOG |
-| Filter overhead | **122 ns** per call |
-| Test stability | **2.2%** CV (excellent) |
-
-### Feature Comparison
-
-| Feature | LE_LOG | UE_LOG |
-|---------|--------|--------|
-| Throughput | Higher | Lower |
-| Category/Level Filtering | Yes | No |
-| Hierarchical Categories | Yes | No |
-| Runtime Configuration | Yes | No |
-| Multi-thread Performance | Better | Good |
-| Async Persistence | Yes | Sync |
-
-### Recommendations
-
-| Use Case | Recommended Configuration |
-|----------|--------------------------|
-| High-performance | 1MB buffer, Low reliability |
-| Balanced | 16MB buffer, Normal reliability |
-| Debug/Critical | 1MB buffer, High reliability |
+这意味着即使在高频调用被过滤的日志时，每次调用仅消耗约 **120 纳秒**，对性能影响极小。
 
 ---
 
-## Appendix: Raw Data
+## 5. 可视化分析
 
-### Per-Round Results
+### 5.1 吞吐量对比图
 
-<details>
-<summary>Click to expand full round-by-round data</summary>
+![吞吐量对比](perf_throughput_comparison.png)
 
-#### Round 1
+**图表说明**：
+- 左图显示 UE_LOG 和 LE_LOG 在三种测试场景下的吞吐量对比
+- LE_LOG 包含分类级别过滤功能，UE_LOG 不包含
+- 误差条表示多轮测试的标准差，反映测试结果的稳定性
+- 右图显示 LE_LOG 相对 UE_LOG 的性能提升百分比
 
-| Test Case | Total Time (ms) | Avg Latency (ns) | Throughput (/s) |
-|-----------|-----------------|------------------|-----------------|
-| UE_LOG Baseline | 595.80 | 596 | 1,678,422 |
-| LE_LOG Baseline | 393.52 | 394 | 2,541,166 |
-| UE_LOG Formatted | 687.22 | 687 | 1,455,128 |
-| LE_LOG Formatted | 403.58 | 404 | 2,477,822 |
-| LE_LOG Level Filter | 124.01 | 124 | 8,063,716 |
-| LE_LOG Category Disabled | 122.75 | 123 | 8,146,440 |
-| UE_LOG Multi-thread | 197.00 | 197 | 5,076,145 |
-| LE_LOG Multi-thread | 194.37 | 194 | 5,144,721 |
+### 5.2 各轮次趋势图
 
-#### Round 2-10
+![轮次趋势](perf_rounds_trend.png)
 
-(Similar data tables for remaining rounds - available in full CSV export)
+**图表说明**：
+- 显示每轮测试的吞吐量变化趋势
+- 用于观察测试结果的稳定性和一致性
+- 曲线越平稳表示测试结果越可靠
 
-</details>
+### 5.3 过滤检查开销图
 
----
+![过滤开销](perf_filter_overhead.png)
 
-## References
-
-- [BqLog GitHub Repository](https://github.com/Tencent/BqLog)
-- [LogEverything Plugin Documentation](../../README.md)
-- [v1.0.0 Changelog](../../ChangeLogs/CHANGELOG_v1.0.0_EN.md)
+**图表说明**：
+- 显示日志被级别过滤或分类禁用时，每次调用的开销（纳秒）
+- 约 120 纳秒的开销意味着过滤检查非常轻量
 
 ---
 
-*Generated by LogEverything Multi-Round Performance Report Generator*
-*Test Framework: Unreal Engine Automation Test*
-*Log Backend: BqLog High-Performance Logging Library*
+## 6. 结论
+
+### 6.1 关键发现
+
+1. **基准性能**: LE_LOG 比 UE_LOG 快 **52%** (2.54M/秒 vs 1.66M/秒)
+
+2. **格式化性能**: LE_LOG 格式化比 UE_LOG 快 **73%**，BqLog 的 {} 占位符格式化效率更高
+
+3. **多线程性能**: LE_LOG 在 4 线程并发下比 UE_LOG 快 **9%**
+
+4. **过滤开销**: 当日志被过滤时，每次调用仅消耗约 **122 纳秒**，非常轻量
+
+5. **测试稳定性**: 平均变异系数为 **2.2%**，测试结果非常稳定
+
+### 6.2 性能优势来源
+
+LE_LOG 在包含分类级别过滤功能的前提下，仍比 UE_LOG 更快，主要原因：
+
+1. **BqLog 高性能内核**: 使用 lock-free 环形缓冲区，减少线程竞争
+2. **异步写入**: 日志先写入内存缓冲区，由后台线程异步落盘
+3. **高效格式化**: {} 占位符比 printf 风格更高效
+4. **轻量级分类检查**: 分类启用/禁用状态检查开销极小（约 100-300 纳秒）
+
+### 6.3 功能对比总结
+
+| 功能 | LE_LOG | UE_LOG |
+|------|--------|--------|
+| 基准性能 | 更快 | 较慢 |
+| 分类级别过滤 | 支持 | 不支持 |
+| 层级化分类 | 支持 | 不支持 |
+| 运行时配置 | 支持 | 不支持 |
+| 多线程性能 | 更好 | 较差 |
+
+### 6.4 使用建议
+
+| 使用场景 | 推荐配置 | 说明 |
+|----------|----------|------|
+| 高性能场景 | 缓冲区 1MB, Low 可靠性 | 极端负载下可能丢弃日志 |
+| 平衡场景 | 缓冲区 16MB, Normal 可靠性 | 不丢日志，大缓冲区避免阻塞 |
+| 调试/关键场景 | 缓冲区 1MB, High 可靠性 | 实时落盘，较慢但可靠 |
+
+---
+
+*由 LogEverything 多轮性能报告生成器自动生成*
+*测试框架: Unreal Engine Automation Test*
+*日志后端: BqLog High-Performance Logging Library*
