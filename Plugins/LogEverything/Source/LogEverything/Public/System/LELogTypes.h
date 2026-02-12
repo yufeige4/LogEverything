@@ -5,6 +5,10 @@
 #include "CoreMinimal.h"
 #include "Engine/Engine.h"
 #include "Logging/LogVerbosity.h"
+
+// BqLog 配置相关类型（FLEBqLogConfig, ELELogOutput, ELELogReliableLevel）
+#include "LEBqLogConfig.h"
+
 #include "LELogTypes.generated.h"
 
 #ifndef LOGEVERYTHING_API
@@ -25,115 +29,84 @@ enum class ELELogVerbosity : uint8
 	Error       = 4		UMETA(DisplayName = "Error"),       // 对应 BqLog::error
 	Fatal       = 5		UMETA(DisplayName = "Fatal"),       // 对应 BqLog::fatal
 
+	NotSet      = 254	UMETA(DisplayName = "Not Set"),		// 特殊值，表示未设置
 	NoLogging   = 255	UMETA(DisplayName = "No Logging"),  // 特殊值，表示完全关闭日志
 };
 
 /**
- * 日志输出目标枚举
- * Defines where log messages should be output
+ * 构建环境类型枚举
+ * 用于区分不同构建配置下的日志行为
+ *
+ * - Development: 开发环境，详细日志输出，适合开发调试
+ * - Debug: 调试环境，最详细的日志输出，包含调试符号和额外检查
+ * - Test: 测试环境，针对QA和自动化测试优化的日志配置，关注关键业务逻辑
+ * - Shipping: 发布环境，最精简的日志配置，仅输出警告和错误
  */
 UENUM(BlueprintType)
-enum class ELELogOutput : uint8
+enum class ELEBuildEnvironment : uint8
 {
-	/** 输出到控制台 */
-	Console		UMETA(DisplayName = "Console"),
+	/** 开发环境 - 详细日志输出，适合日常开发调试 */
+	Development		UMETA(DisplayName = "Development"),
 
-	/** 输出到文件 */
-	File		UMETA(DisplayName = "File"),
+	/** 调试环境 - 最详细的日志输出，包含所有调试信息 */
+	Debug			UMETA(DisplayName = "Debug"),
 
-	/** 输出到压缩文件 */
-	Compressed	UMETA(DisplayName = "Compressed"),
+	/** 测试环境 - QA和自动化测试优化的日志配置 */
+	Test			UMETA(DisplayName = "Test"),
 
-	/** 输出到网络 */
-	Network		UMETA(DisplayName = "Network")
+	/** 发布环境 - 仅输出警告和错误，性能优先 */
+	Shipping		UMETA(DisplayName = "Shipping")
 };
 
 /**
- * 日志级别映射结构
- * Maps category names to their log verbosity levels
- * 使用 FName 优化性能：O(1) 比较和哈希查找，减少内存分配
+ * 网络环境类型枚举
+ * 用于区分客户端和专用服务器的日志配置
+ *
+ * - Client: 客户端环境，可能包含UI相关的详细日志
+ * - DedicatedServer: 专用服务器环境，关注网络和游戏逻辑，减少渲染相关日志
  */
-USTRUCT(BlueprintType)
-struct LOGEVERYTHING_API FLECategoryLevel
+UENUM(BlueprintType)
+enum class ELENetEnvironment : uint8
 {
-	GENERATED_BODY()
+	/** 客户端 - 包含UI和渲染相关的日志 */
+	Client				UMETA(DisplayName = "Client"),
 
-	/** 日志分类名称 (使用 FName 优化性能) */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Log Settings")
-	FName CategoryName;
-
-	/** 日志级别 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Log Settings")
-	ELELogVerbosity LogLevel;
-
-	FLECategoryLevel()
-		: CategoryName(NAME_None)
-		, LogLevel(ELELogVerbosity::Info)
-	{
-	}
-
-	FLECategoryLevel(const FName& InCategoryName, ELELogVerbosity InLogLevel)
-		: CategoryName(InCategoryName)
-		, LogLevel(InLogLevel)
-	{
-	}
-	
+	/** 专用服务器 - 关注网络和游戏逻辑 */
+	DedicatedServer		UMETA(DisplayName = "Dedicated Server")
 };
 
 /**
- * LogEverything 系统配置结构
- * Configuration structure for the LogEverything system
+ * 分类启用状态枚举
+ * 用一个变量同时表达"是否有显式设置"和"设置的值"
+ *
+ * 这是解决"启用状态继承缺陷"的核心机制：
+ * - NotSet=0: 默认值，表示未显式设置启用状态，应该继承父节点的启用状态
+ *   例如：父节点 "Game" 启用，子节点 "Game.Combat" 为 NotSet，则 "Game.Combat" 继承启用
+ * - Disabled=1: 显式禁用，即使父节点启用也保持禁用状态
+ *   例如：父节点 "Game" 启用，子节点 "Game.Combat" 为 Disabled，则 "Game.Combat" 禁用
+ * - Enabled=2: 显式启用，但父节点禁用时会被强制禁用（继承父节点的禁用状态）
+ *   例如：父节点 "Game" 禁用，子节点 "Game.Combat" 为 Enabled，则 "Game.Combat" 仍然禁用
+ *
+ * 启用状态继承规则：
+ * 1. 如果父节点禁用，所有子节点强制禁用（无论子节点设置为什么）
+ * 2. 如果父节点启用，子节点的实际状态取决于自身设置：
+ *    - NotSet: 继承父节点启用状态
+ *    - Disabled: 禁用
+ *    - Enabled: 启用
  */
-USTRUCT(BlueprintType)
-struct LOGEVERYTHING_API FLELogSettings
+UENUM(BlueprintType)
+enum class ELEEnabledState : uint8
 {
-	GENERATED_BODY()
+	/** 未设置 - 继承父节点的启用状态 */
+	NotSet   = 0	UMETA(DisplayName = "Not Set"),
 
-	/** 各分类的日志级别配置 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Log Settings")
-	TArray<FLECategoryLevel> CategoryLevels;
+	/** 显式禁用 - 即使父节点启用也保持禁用 */
+	Disabled = 1	UMETA(DisplayName = "Disabled"),
 
-	/** 全局默认日志级别 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Log Settings")
-	ELELogVerbosity GlobalLogLevel;
-
-	/** 日志输出目标 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Log Settings")
-	TArray<ELELogOutput> OutputTargets;
-
-	/** 缓冲区大小（字节） */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Performance", meta = (ClampMin = "1024", ClampMax = "67108864"))
-	int32 BufferSize;
-
-	/** 是否启用异步日志 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Performance")
-	bool bEnableAsyncLogging;
-
-	/** 是否启用压缩 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Storage")
-	bool bEnableCompression;
-
-	/** 日志文件路径 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Storage")
-	FString LogFilePath;
-
-	/** 最大日志文件大小（MB） */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Storage", meta = (ClampMin = "1", ClampMax = "1024"))
-	int32 MaxLogFileSizeMB;
-
-	FLELogSettings()
-		: GlobalLogLevel(ELELogVerbosity::Info)
-		, BufferSize(1048576) // 1MB default
-		, bEnableAsyncLogging(true)
-		, bEnableCompression(false)
-		, LogFilePath(TEXT("Logs/Game.log"))
-		, MaxLogFileSizeMB(100)
-	{
-		// 默认输出到控制台和文件
-		OutputTargets.Add(ELELogOutput::Console);
-		OutputTargets.Add(ELELogOutput::File);
-	}
+	/** 显式启用 - 但父节点禁用时会被强制禁用 */
+	Enabled  = 2	UMETA(DisplayName = "Enabled")
 };
+
 
 /**
  * 类型转换工具函数

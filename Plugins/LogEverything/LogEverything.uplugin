@@ -1,9 +1,9 @@
 {
 	"FileVersion": 3,
-	"Version": 7,
-	"VersionName": "0.7.0",
+	"Version": 10,
+	"VersionName": "1.0.0",
 	"FriendlyName": "LogEverything",
-	"Description": "High-performance log system for Unreal Engine with BqLog template interface integration - Zero-copy logging with modern C++20 formatting",
+	"Description": "High-performance log system based on BqLog - Features hierarchical categories, ShowDebug visualization, 6000x+ faster than UE_LOG",
 	"Category": "Other",
 	"CreatedBy": "benedictge",
 	"CreatedByURL": "https://github.com/yufeige4",

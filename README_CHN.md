@@ -13,47 +13,102 @@ LogEverything 是一个将腾讯高性能日志库 [BqLog](https://github.com/Te
 - **配套工具链**：随插件提供 `Windows` / `Linux` / `macOS` 的分类生成器与同步脚本，方便与上游 `BqLog` 保持一致。
 
 ## 快速开始
-1. **安装插件** – 将 `Plugins/LogEverything` 复制到项目或引擎的 `Plugins/` 目录，并在 `UnealEngine` 插件管理器中启用。
-2. **调整分类（可选）** -- 修改 `Config/LogEverythingCategories.txt` 后，运行 `Tools/BqLogTools/GenerateLogEverythingCategories.bat`（或对应平台生成器）刷新 `Source/Generated/LogEverythingLogger.*` 和 `Config/LogEverythingCategoryConfig.json`。
-3. **自定义级别（可选）** -- 编辑 `Config/LogEverythingCategoryConfig.json`，为需要的分类设置 `level` 和 `enabled`。设为 `"NotSet"` 表示继承父节点。格式详情参阅 [JSON 配置文档](Plugins/LogEverything/Tools/BqLogTools/README_CategoryConfig.md)。
-4. **编译工程** -- 视情况重新生成项目文件，并在编辑器或 CI 流程中完成编译。
-5. **运行验证** -- 游戏实例启动时 `ULELogSubsystem` 会加载 JSON 分类配置并初始化 `BqLog`，日志写入 `Saved/LogEverything/LE_<进程ID>_*.log`。
 
-### 最简使用示例
+### 安装
+
+1. 将 `Plugins/LogEverything` 复制到项目的 `Plugins/` 目录
+2. 在 Unreal Editor 插件管理器中启用插件
+3. 编译项目
+
+即可使用！LogEverything 提供开箱即用的默认配置。
+
+### 基本用法
+
 ```cpp
+// 第一步：声明日志分类（头文件中）
+DECLARE_LE_CATEGORY_EXTERN(LogCombat, Game.Combat);
 
-// 如何声明一个日志分类
-DECLARE_LE_CATEGORY_EXTERN(LELogGameCombatSkill, Game.Combat.Skill);
-DEFINE_LE_CATEGORY(LELogGameCombatSkill);
+// 第二步：定义分类（源文件中）
+DEFINE_LE_CATEGORY(LogCombat);
 
-// 任意玩法逻辑
-float PlayerHealth = 15.0f;
-int32 AmmoCount = 0;
-bool bIsEnemyNear = true;
-// 使用常规打印宏
-// 支持多种日志级别包含：Verbose, Debug, Info, Warning, Error, Fatal  
-// 可以限制不同分类具备不同日志等级权限
-LE_LOG(LELogTestLogSystem, Debug, TEXT("Current gameplay state:"));
-// 使用快捷打印宏
-LE_LOG_DEBUG(LELogTestLogSystem, TEXT("- Player health: {:.1f}"), PlayerHealth);
-LE_LOG_DEBUG(LELogTestLogSystem, TEXT("- Ammo count: {}"), AmmoCount);
-LE_LOG_DEBUG(LELogTestLogSystem, TEXT("- Enemy nearby: {}"), bIsEnemyNear ? TEXT("Yes") : TEXT("No"));
-LE_LOG_DEBUG(LELogTestLogSystem, TEXT(""));
-// 可以使用{}占位符来进行数据打印, 同时支持{:.2f}或{.2f}风格
-LE_CLOG_DEBUG(PlayerHealth < 20.0f, LELogGameCombatDamage, TEXT("Player health critically low: {:.1f}"), PlayerHealth);
-LE_CLOG_DEBUG(AmmoCount == 0, LELogGameCombatSkill, TEXT("Ammunition depleted, ranged skills unavailable"));
-LE_CLOG_DEBUG(bIsEnemyNear && PlayerHealth < 50.0f, LELogGameAI, TEXT("Danger: enemy closing in while health is low"));
+// 第三步：使用现代 {} 格式化语法记录日志
+LE_LOG(LogCombat, Info, TEXT("玩家 {} 造成了 {} 点伤害"), PlayerName, DamageAmount);
+```
 
-// 最终输出日志如下
-UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Test.LogSystem]	Current gameplay state:
-UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Test.LogSystem]	- Player health: 15.0
-UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Test.LogSystem]	- Ammo count: 0
-UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Test.LogSystem]	- Enemy nearby: Yes
-UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Test.LogSystem]	
-UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Game.Combat.Damage]	Player health critically low: 15.0
-UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Game.Combat.Skill]	Ammunition depleted, ranged skills unavailable
-UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Game.AI]	Danger: enemy closing in while health is low
+### 为什么选择 LogEverything
 
+| 特性 | LE_LOG | UE_LOG |
+|------|--------|--------|
+| 吞吐量 | 254万条/秒 | 166万条/秒 |
+| 格式化语法 | 现代 `{}` 占位符 | printf 风格 `%s %d` |
+| 分类层级 | 支持 `Game.Combat.Skill` | 扁平分类 |
+| 运行时过滤 | 按分类级别过滤 | 有限支持 |
+| 异步持久化 | 支持 | 同步写入 |
+
+### 代码示例
+
+**基础日志**
+```cpp
+LE_LOG(LogCombat, Info, TEXT("战斗开始"));
+LE_LOG(LogCombat, Warning, TEXT("弹药不足：剩余 {} 发"), AmmoCount);
+LE_LOG(LogCombat, Error, TEXT("投射物生成失败"));
+```
+
+**条件日志**
+```cpp
+LE_CLOG(Health < 20.0f, LogCombat, Warning, TEXT("血量危急：{:.1f}"), Health);
+LE_CHECK(IsValid(Target), LogCombat, Error, TEXT("目标无效"));
+```
+
+**便捷宏**
+```cpp
+LE_LOG_INFO(LogCombat, TEXT("比赛开始，共 {} 名玩家"), PlayerCount);
+LE_LOG_WARNING(LogCombat, TEXT("服务器延迟过高：{}ms"), Latency);
+LE_LOG_ERROR(LogCombat, TEXT("连接断开"));
+```
+
+**运行时配置**
+```cpp
+// 运行时调整日志级别
+LE_SET_CATEGORY_LEVEL(LogCombat, Warning);  // 仅输出 Warning 及以上
+LE_SET_GLOBAL_LEVEL(Info);                  // 设置全局阈值
+LE_DISABLE_CATEGORY(LogCombat);             // 临时禁用分类
+```
+
+### 输出格式
+
+```
+UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread] [I] [Game.Combat] 玩家 John 造成了 150 点伤害
+UTC+08 2025-09-27 10:51:36.943[tid-177304 GameThread] [W] [Game.Combat] 弹药不足：剩余 5 发
+```
+
+### 高级配置（可选）
+
+如需自定义分类层级，编辑 `Config/LogEverythingCategories.txt`：
+
+```text
+Game
+Game.Combat
+Game.Combat.Damage
+Game.Combat.Skill
+Game.AI
+Game.AI.Pathfinding
+```
+
+然后运行 `Tools/BqLogTools/GenerateLogEverythingCategories.bat` 重新生成分类代码。
+
+如需按分类设置日志级别，编辑 `Config/LogEverythingCategoryConfig.json`：
+
+```json
+{
+  "defaultLevel": "Info",
+  "categories": [
+    { "name": "Game", "children": [
+      { "name": "Combat", "level": "Debug" },
+      { "name": "AI", "level": "Warning" }
+    ]}
+  ]
+}
 ```
 
 ## 运行时分类管理
@@ -94,6 +149,49 @@ Plugins/LogEverything/
 └─ Tools/                      # 生成器与辅助脚本
 ```
 
+## 性能基准测试
+
+> 测试环境：Intel Core i7-14700 (28核), 127.6GB 内存, Windows 11, Development 构建
+> 10 轮测试平均值，变异系数 < 2.2%
+
+### LE_LOG vs UE_LOG 性能对比
+
+| 测试场景 | UE_LOG | LE_LOG（含过滤） | 性能提升 |
+|---------|--------|-----------------|---------|
+| 基准测试（100万条） | 1.66M/秒 | 2.54M/秒 | **+52%** |
+| 格式化测试（带参数） | 1.46M/秒 | 2.53M/秒 | **+73%** |
+| 多线程测试（4线程） | 4.93M/秒 | 5.37M/秒 | **+9%** |
+
+**说明**：LE_LOG 在每次调用时都执行完整的分类/级别过滤检查，而 UE_LOG 不具备此功能。
+
+### 过滤开销
+
+| 过滤类型 | 每次调用开销 |
+|---------|------------|
+| 级别过滤 | **122 纳秒** |
+| 分类禁用 | **122 纳秒** |
+
+即使在高频调用被过滤的日志时，每次调用仅消耗约 120 纳秒，对性能影响极小。
+
+### 性能优势来源
+
+1. **无锁环形缓冲** - BqLog 内核减少线程竞争
+2. **异步持久化** - 日志先缓冲在内存，后台线程异步落盘
+3. **高效格式化** - `{}` 占位符比 printf 风格更高效
+4. **轻量级过滤** - 分类检查仅增加约 120 纳秒开销
+
+![性能对比](docs/benchmark/perf_throughput_comparison.png)
+
+详细测试方法和完整结果请查看 [性能测试报告](docs/benchmark/PERFORMANCE_REPORT.md)。
+
+## 1.0.0 新特性
+- **ShowDebug 可视化** - 通过 `ShowDebug LogEverything` 控制台命令实时显示分类树
+- **性能基准测试** - LE_LOG 比 UE_LOG **快 52-73%**，同时包含完整过滤功能
+- **自动化测试套件** - 19 个测试（11 功能 + 8 性能）确保可靠性
+- **双全局级别** - 分离初始化级别和运行时级别，控制更灵活
+- **过滤开销** - 测量约 122 纳秒/次
+- 详细变更请查看 [v1.0.0 更新日志（中文）](ChangeLogs/CHANGELOG_v1.0.0_CHN.md)
+
 ## 0.9.0 新特性
 - 用人类可读的 **JSON 配置文件** (`Config/LogEverythingCategoryConfig.json`) 替代 `ULECategoryConfigNode` UObject 树，作为分类级别与启用状态的配置来源。
 - 新增 `Tools/BqLogTools/GenerateCategoryConfigJson.py`，从 `LogEverythingCategories.txt` 自动生成 JSON，支持**合并模式**（重新生成时保留已有配置）。
@@ -117,5 +215,5 @@ Plugins/LogEverything/
 ## 支持、规划与贡献
 - **问题 / 功能需求** – 欢迎在 `GitHub` 提交 `Issue`，并附上复现步骤。
 - **代码贡献** – 提交 `Pull Request` 时请注明测试过的 `UnealEngine` 版本与平台，并附上关键日志。
-- **后续路线** -- 下一版本计划进行日志性能测试与分析；后续支持按不同环境（`开发`、`QA`、`正式`、`专用服务器`）定制分类/级别策略，并补充配置资产。
-- **更新记录** -- 历史版本详见 [v0.9.0 更新日志（中文）](ChangeLogs/CHANGELOG_v0.9.0_CHN.md)、[v0.7.0 更新日志（中文）](ChangeLogs/CHANGELOG_v0.7.0_CHN.md) 及更早条目。
+- **后续路线** -- 支持按不同环境（`开发`、`QA`、`正式`、`专用服务器`）定制分类/级别策略；CI/CD 性能回归测试。
+- **更新记录** -- 历史版本详见 [v1.0.0 更新日志（中文）](ChangeLogs/CHANGELOG_v1.0.0_CHN.md)、[v0.9.0 更新日志（中文）](ChangeLogs/CHANGELOG_v0.9.0_CHN.md)、[v0.7.0 更新日志（中文）](ChangeLogs/CHANGELOG_v0.7.0_CHN.md) 及更早条目。

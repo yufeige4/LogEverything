@@ -3,10 +3,12 @@
 #include "Category/LECategoryTree.h"
 #include "Utils/LogEverythingUtils.h"
 #include "Engine/Engine.h"
+#include "ProfilingDebugging/CpuProfilerTrace.h"
 
 ULECategoryTree::ULECategoryTree()
 	: RootNodeIndex(INDEX_NONE)
-	, TreeVersion(0)
+	, DefaultGlobalLevel(ELELogVerbosity::NotSet)
+	, CurrentGlobalLevel(ELELogVerbosity::NotSet)
 {
 }
 
@@ -15,7 +17,10 @@ bool ULECategoryTree::InitializeTree(const TArray<FString>& CategoryPaths)
 	// 清空现有数据
 	Nodes.Empty();
 	PathToIndexMap.Empty();
-	TreeVersion = 0;
+
+	// 重置全局级别
+	DefaultGlobalLevel = ELELogVerbosity::NotSet;
+	CurrentGlobalLevel = ELELogVerbosity::NotSet;
 
 	// 创建根节点
 	CreateRootNode();
@@ -35,7 +40,6 @@ bool ULECategoryTree::InitializeTree(const TArray<FString>& CategoryPaths)
 		}
 	}
 
-	IncrementVersion();
 	LE_SYSTEM_LOG(TEXT("Category tree initialized with %d nodes, success: %s"),
 		Nodes.Num(), bSuccess ? TEXT("true") : TEXT("false"));
 
@@ -45,19 +49,10 @@ bool ULECategoryTree::InitializeTree(const TArray<FString>& CategoryPaths)
 bool ULECategoryTree::SetCategoryLevel(const FString& CategoryPath, ELELogVerbosity Level, bool bPropagate)
 {
 	int32 NodeIndex = FindNodeIndex(CategoryPath);
-	if (NodeIndex == INDEX_NONE)
-	{
-		// 如果节点不存在，尝试创建
-		NodeIndex = FindOrCreateNode(CategoryPath);
-		if (NodeIndex == INDEX_NONE)
-		{
-			LE_SYSTEM_WARNING(TEXT("Cannot find or create node for path: %s"), *CategoryPath);
-			return false;
-		}
-	}
 
-	if (!IsValidNodeIndex(NodeIndex))
+	if (!ensure(IsValidNodeIndex(NodeIndex)))
 	{
+		LE_SYSTEM_WARNING(TEXT("[SetCategoryLevel] Cannot find node for path: %s"), *CategoryPath);
 		return false;
 	}
 
@@ -68,15 +63,14 @@ bool ULECategoryTree::SetCategoryLevel(const FString& CategoryPath, ELELogVerbos
 	if (bPropagate)
 	{
 		// 强制传播：覆盖所有子节点
-		UpdateChildrenEffectiveLevels(NodeIndex, Level, true);
+		InternalUpdateChildrenEffectiveLevels(NodeIndex, Level, true);
 	}
 	else
 	{
 		// 智能继承：仅更新没有显式设置的子节点
-		UpdateChildrenEffectiveLevels(NodeIndex, Level, false);
+		InternalUpdateChildrenEffectiveLevels(NodeIndex, Level, false);
 	}
 
-	IncrementVersion();
 	LE_SYSTEM_LOG(TEXT("Set category level: %s = %s (propagate: %s)"),
 		*CategoryPath, *UEnum::GetValueAsString(Level), bPropagate ? TEXT("true") : TEXT("false"));
 
@@ -98,8 +92,14 @@ ELELogVerbosity ULECategoryTree::GetEffectiveLevel(const FString& CategoryPath) 
 
 bool ULECategoryTree::ShouldLogCategory(const FName& CategoryName, ELELogVerbosity Level) const
 {
-	const int32* FoundIndex = PathToIndexMap.Find(CategoryName);
-	int32 NodeIndex = FoundIndex ? *FoundIndex : INDEX_NONE;
+	TRACE_CPUPROFILER_EVENT_SCOPE(LE_Tree_ShouldLogCategory);
+
+	int32 NodeIndex;
+	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(LE_Tree_FindCategory);
+		const int32* FoundIndex = PathToIndexMap.Find(CategoryName);
+		NodeIndex = FoundIndex ? *FoundIndex : INDEX_NONE;
+	}
 
 	if (IsValidNodeIndex(NodeIndex))
 	{
@@ -111,28 +111,35 @@ bool ULECategoryTree::ShouldLogCategory(const FName& CategoryName, ELELogVerbosi
 			return false;
 		}
 
-		// 直接比较枚举值（值越小级别越低）
-		return static_cast<uint8>(Level) >= static_cast<uint8>(Node.EffectiveLevel);
+		// 取 CurrentGlobalLevel 和节点 EffectiveLevel 中更严格的那个
+		// 级别越高（数值越大）越严格，只显示更重要的日志
+		// Take the stricter of CurrentGlobalLevel and node EffectiveLevel
+		// Higher level (larger value) is stricter, showing only more important logs
+		ELELogVerbosity EffectiveThreshold = Node.EffectiveLevel;
+		if (CurrentGlobalLevel != ELELogVerbosity::NotSet &&
+			static_cast<uint8>(CurrentGlobalLevel) > static_cast<uint8>(EffectiveThreshold))
+		{
+			EffectiveThreshold = CurrentGlobalLevel;
+		}
+
+		// 日志级别必须 >= 有效阈值才输出
+		return static_cast<uint8>(Level) >= static_cast<uint8>(EffectiveThreshold);
 	}
 
-	// 如果找不到节点，使用默认规则：Info 及以上级别显示
-	return static_cast<uint8>(Level) >= static_cast<uint8>(ELELogVerbosity::Warning);
+	// 如果找不到节点，使用 CurrentGlobalLevel 或默认 Warning
+	ELELogVerbosity FallbackLevel = (CurrentGlobalLevel != ELELogVerbosity::NotSet)
+		? CurrentGlobalLevel
+		: ELELogVerbosity::Warning;
+	return static_cast<uint8>(Level) >= static_cast<uint8>(FallbackLevel);
 }
 
 bool ULECategoryTree::SetCategoryEnabled(const FString& CategoryPath, bool bEnabled, bool bPropagate)
 {
 	int32 NodeIndex = FindNodeIndex(CategoryPath);
-	if (NodeIndex == INDEX_NONE)
-	{
-		NodeIndex = FindOrCreateNode(CategoryPath);
-		if (NodeIndex == INDEX_NONE)
-		{
-			return false;
-		}
-	}
 
-	if (!IsValidNodeIndex(NodeIndex))
+	if (!ensure(IsValidNodeIndex(NodeIndex)))
 	{
+		LE_SYSTEM_WARNING(TEXT("[SetCategoryEnabled] Cannot find node for path: %s"), *CategoryPath);
 		return false;
 	}
 
@@ -142,10 +149,9 @@ bool ULECategoryTree::SetCategoryEnabled(const FString& CategoryPath, bool bEnab
 	// 如果需要传播到子节点
 	if (bPropagate)
 	{
-		UpdateChildrenEnabledState(NodeIndex, bEnabled);
+		InternalUpdateChildrenEnabledState(NodeIndex, bEnabled);
 	}
 
-	IncrementVersion();
 	LE_SYSTEM_LOG(TEXT("Set category enabled: %s = %s (propagate: %s)"),
 		*CategoryPath, bEnabled ? TEXT("true") : TEXT("false"), bPropagate ? TEXT("true") : TEXT("false"));
 
@@ -204,6 +210,11 @@ TArray<FString> ULECategoryTree::GetChildCategories(const FString& CategoryPath)
 
 void ULECategoryTree::ResetToDefault()
 {
+	// 重置全局级别到默认状态
+	// DefaultGlobalLevel 保持原值（这是配置加载时设置的初始值）
+	// CurrentGlobalLevel 重置为 DefaultGlobalLevel（用户运行时可能修改过）
+	CurrentGlobalLevel = DefaultGlobalLevel;
+
 	// 重置所有节点到默认状态
 	for (FLECategoryNode& Node : Nodes)
 	{
@@ -211,14 +222,77 @@ void ULECategoryTree::ResetToDefault()
 		Node.SetEnabled(true);
 	}
 
-	// 重新计算所有有效级别
+	// 重新计算所有有效级别，使用 DefaultGlobalLevel 作为基础级别
+	ELELogVerbosity BaseLevel = (DefaultGlobalLevel != ELELogVerbosity::NotSet)
+		? DefaultGlobalLevel
+		: ELELogVerbosity::Info;
+
 	if (IsValidNodeIndex(RootNodeIndex))
 	{
-		UpdateChildrenEffectiveLevels(RootNodeIndex, ELELogVerbosity::Info, true);
+		InternalUpdateChildrenEffectiveLevels(RootNodeIndex, BaseLevel, true);
 	}
 
-	IncrementVersion();
 	LE_SYSTEM_LOG(TEXT("Category tree reset to default"));
+}
+
+void ULECategoryTree::SetDefaultGlobalLevel(ELELogVerbosity NewLevel)
+{
+	// 记录旧的默认全局级别用于日志输出
+	ELELogVerbosity OldLevel = DefaultGlobalLevel;
+
+	// 更新默认全局级别
+	DefaultGlobalLevel = NewLevel;
+
+	// 初始化时同时设置 CurrentGlobalLevel
+	CurrentGlobalLevel = NewLevel;
+
+	// 如果根节点存在且未设置显式级别，需要更新根节点的有效级别并传播到子节点
+	if (IsValidNodeIndex(RootNodeIndex))
+	{
+		FLECategoryNode& RootNode = Nodes[RootNodeIndex];
+
+		// 只有在根节点没有显式设置级别时才更新
+		if (!RootNode.bHasExplicitLevel)
+		{
+			// 更新根节点的有效级别
+			RootNode.UpdateEffectiveLevel(NewLevel);
+
+			// 传播更改到所有子节点（仅更新没有显式设置的子节点）
+			InternalUpdateChildrenEffectiveLevels(RootNodeIndex, NewLevel, false);
+
+			LE_SYSTEM_LOG(TEXT("SetDefaultGlobalLevel: Updated from %s to %s, propagated to tree"),
+				*UEnum::GetValueAsString(OldLevel), *UEnum::GetValueAsString(NewLevel));
+		}
+		else
+		{
+			LE_SYSTEM_LOG(TEXT("SetDefaultGlobalLevel: Updated from %s to %s, root has explicit level"),
+				*UEnum::GetValueAsString(OldLevel), *UEnum::GetValueAsString(NewLevel));
+		}
+	}
+	else
+	{
+		LE_SYSTEM_WARNING(TEXT("SetDefaultGlobalLevel: %s -> %s, tree not initialized"),
+			*UEnum::GetValueAsString(OldLevel), *UEnum::GetValueAsString(NewLevel));
+	}
+}
+
+ELELogVerbosity ULECategoryTree::GetDefaultGlobalLevel() const
+{
+	return DefaultGlobalLevel;
+}
+
+void ULECategoryTree::SetCurrentGlobalLevel(ELELogVerbosity NewLevel)
+{
+	ELELogVerbosity OldLevel = CurrentGlobalLevel;
+	CurrentGlobalLevel = NewLevel;
+
+	LE_SYSTEM_LOG(TEXT("SetCurrentGlobalLevel: %s -> %s"),
+		*UEnum::GetValueAsString(OldLevel), *UEnum::GetValueAsString(NewLevel));
+}
+
+ELELogVerbosity ULECategoryTree::GetCurrentGlobalLevel() const
+{
+	return CurrentGlobalLevel;
 }
 
 void ULECategoryTree::GetTreeStatistics(int32& OutTotalNodes, int32& OutMaxDepth, int32& OutExplicitNodes) const
@@ -243,8 +317,9 @@ void ULECategoryTree::GetTreeStatistics(int32& OutTotalNodes, int32& OutMaxDepth
 
 FString ULECategoryTree::ExportTreeDebugString() const
 {
-	FString DebugString = FString::Printf(TEXT("=== Category Tree Debug Info (Version: %d) ===\n"), TreeVersion);
-	DebugString += FString::Printf(TEXT("Total Nodes: %d, Root Index: %d\n\n"), Nodes.Num(), RootNodeIndex);
+	FString DebugString = FString::Printf(TEXT("=== Category Tree Debug Info ===\n"));
+	DebugString += FString::Printf(TEXT("Total Nodes: %d, Root Index: %d\n"), Nodes.Num(), RootNodeIndex);
+	DebugString += FString::Printf(TEXT("Default Global Level: %s\n\n"), *UEnum::GetValueAsString(DefaultGlobalLevel));
 
 	if (IsValidNodeIndex(RootNodeIndex))
 	{
@@ -254,14 +329,94 @@ FString ULECategoryTree::ExportTreeDebugString() const
 	return DebugString;
 }
 
+const FLECategoryNode* ULECategoryTree::GetNode(const FString& CategoryPath) const
+{
+	// 使用 FindNodeIndex 查找节点索引
+	int32 NodeIndex = FindNodeIndex(CategoryPath);
+
+	// 验证索引有效性
+	if (!IsValidNodeIndex(NodeIndex))
+	{
+#if !UE_BUILD_SHIPPING
+		// 仅在调试模式下输出日志
+		LE_SYSTEM_LOG(TEXT("[GetNode] Node not found for path: %s"), *CategoryPath);
+#endif
+		return nullptr;
+	}
+
+#if !UE_BUILD_SHIPPING
+	// 仅在调试模式下输出详细日志
+	LE_SYSTEM_LOG(TEXT("[GetNode] Found node for path: %s (Index: %d)"), *CategoryPath, NodeIndex);
+#endif
+
+	// 返回节点的 const 指针
+	return &Nodes[NodeIndex];
+}
+
+const FLECategoryNode* ULECategoryTree::GetNode(int32 NodeIndex) const
+{
+	// 使用 IsValidNodeIndex 验证索引有效性
+	if (!IsValidNodeIndex(NodeIndex))
+	{
+#if !UE_BUILD_SHIPPING
+		// 仅在调试模式下输出日志
+		LE_SYSTEM_LOG(TEXT("[GetNode] Invalid node index: %d (valid range: 0-%d)"), NodeIndex, Nodes.Num() - 1);
+#endif
+		return nullptr;
+	}
+
+	// 返回节点的 const 指针（直接索引访问，高效）
+	return &Nodes[NodeIndex];
+}
+
+FLECategoryNode* ULECategoryTree::GetMutableNode(const FString& CategoryPath)
+{
+	// 使用 FindNodeIndex 查找节点索引
+	int32 NodeIndex = FindNodeIndex(CategoryPath);
+
+	// 验证索引有效性
+	if (!IsValidNodeIndex(NodeIndex))
+	{
+#if !UE_BUILD_SHIPPING
+		// 仅在调试模式下输出日志
+		LE_SYSTEM_LOG(TEXT("[GetMutableNode] Node not found for path: %s"), *CategoryPath);
+#endif
+		return nullptr;
+	}
+
+#if !UE_BUILD_SHIPPING
+	// 仅在调试模式下输出详细日志
+	LE_SYSTEM_LOG(TEXT("[GetMutableNode] Found mutable node for path: %s (Index: %d)"), *CategoryPath, NodeIndex);
+#endif
+
+	// 返回节点的非 const 指针
+	return &Nodes[NodeIndex];
+}
+
+FLECategoryNode* ULECategoryTree::GetMutableNode(int32 NodeIndex)
+{
+	// 使用 IsValidNodeIndex 验证索引有效性
+	if (!IsValidNodeIndex(NodeIndex))
+	{
+#if !UE_BUILD_SHIPPING
+		// 仅在调试模式下输出日志
+		LE_SYSTEM_LOG(TEXT("[GetMutableNode] Invalid node index: %d (valid range: 0-%d)"), NodeIndex, Nodes.Num() - 1);
+#endif
+		return nullptr;
+	}
+
+	// 返回节点的非 const 指针（直接索引访问，高效）
+	return &Nodes[NodeIndex];
+}
+
 void ULECategoryTree::CreateRootNode()
 {
 	FLECategoryNode RootNode;
 	RootNode.CategorySubName = FName(TEXT("LogRoot"));
 	RootNode.CategoryFullName = FName(TEXT("LogRoot"));
-	RootNode.ExplicitLevel = ELELogVerbosity::Info;
-	RootNode.EffectiveLevel = ELELogVerbosity::Info;
-	RootNode.bHasExplicitLevel = true;
+	RootNode.ExplicitLevel = ELELogVerbosity::NoLogging;
+	RootNode.EffectiveLevel = ELELogVerbosity::NoLogging;
+	RootNode.bHasExplicitLevel = false;
 	RootNode.bIsEnabled = true;
 	RootNode.ParentIndex = INDEX_NONE;
 	RootNode.Depth = 0;
@@ -308,8 +463,8 @@ int32 ULECategoryTree::FindOrCreateNode(const FString& CategoryPath)
 			FLECategoryNode NewNode;
 			NewNode.CategorySubName = FName(*Components[i]);
 			NewNode.CategoryFullName = FName(*PartialPath);
-			NewNode.ExplicitLevel = ELELogVerbosity::NoLogging;
-			NewNode.EffectiveLevel = IsValidNodeIndex(CurrentParentIndex) ? Nodes[CurrentParentIndex].EffectiveLevel : ELELogVerbosity::Info;
+			NewNode.ExplicitLevel = ELELogVerbosity::NotSet;
+			NewNode.EffectiveLevel = IsValidNodeIndex(CurrentParentIndex) ? Nodes[CurrentParentIndex].EffectiveLevel : ELELogVerbosity::NotSet;
 			NewNode.bHasExplicitLevel = false;
 			NewNode.bIsEnabled = true;
 			NewNode.ParentIndex = CurrentParentIndex;
@@ -340,7 +495,7 @@ int32 ULECategoryTree::FindNodeIndex(const FString& CategoryPath) const
 	return FoundIndex ? *FoundIndex : INDEX_NONE;
 }
 
-void ULECategoryTree::UpdateChildrenEffectiveLevels(int32 NodeIndex, ELELogVerbosity NewLevel, bool bForceOverride)
+void ULECategoryTree::InternalUpdateChildrenEffectiveLevels(int32 NodeIndex, ELELogVerbosity NewLevel, bool bForceOverride)
 {
 	if (!IsValidNodeIndex(NodeIndex))
 	{
@@ -384,12 +539,12 @@ void ULECategoryTree::UpdateChildrenEffectiveLevels(int32 NodeIndex, ELELogVerbo
 		// 递归更新子节点的子节点
 		if (bShouldUpdate)
 		{
-			UpdateChildrenEffectiveLevels(ChildIndex, NewLevel, bForceOverride);
+			InternalUpdateChildrenEffectiveLevels(ChildIndex, NewLevel, bForceOverride);
 		}
 	}
 }
 
-void ULECategoryTree::UpdateChildrenEnabledState(int32 NodeIndex, bool bEnabled)
+void ULECategoryTree::InternalUpdateChildrenEnabledState(int32 NodeIndex, bool bParentEnabled)
 {
 	if (!IsValidNodeIndex(NodeIndex))
 	{
@@ -406,8 +561,62 @@ void ULECategoryTree::UpdateChildrenEnabledState(int32 NodeIndex, bool bEnabled)
 			continue;
 		}
 
-		Nodes[ChildIndex].SetEnabled(bEnabled);
-		UpdateChildrenEnabledState(ChildIndex, bEnabled);
+		FLECategoryNode& ChildNode = Nodes[ChildIndex];
+
+		// 根据父节点状态和子节点的显式设置计算子节点的有效启用状态
+		// 继承逻辑：
+		// 1. 如果父节点禁用，所有子节点强制禁用（无论子节点的显式设置如何）
+		// 2. 如果父节点启用，子节点的状态取决于其 ExplicitEnabled 设置：
+		//    - NotSet: 继承父节点状态（启用）
+		//    - Enabled: 显式启用
+		//    - Disabled: 显式禁用（保持禁用状态）
+		if (!bParentEnabled)
+		{
+			// 父节点禁用：强制所有子节点禁用
+			ChildNode.SetEnabled(false);
+
+#if !UE_BUILD_SHIPPING
+			LE_SYSTEM_LOG(TEXT("[InternalUpdateChildrenEnabledState] Parent disabled, force child disabled: %s (ExplicitEnabled=%d)"),
+				*ChildNode.CategoryFullName.ToString(), static_cast<int32>(ChildNode.ExplicitEnabled));
+#endif
+		}
+		else
+		{
+			// 父节点启用：根据子节点的显式设置决定状态
+			if (ChildNode.ExplicitEnabled == ELEEnabledState::NotSet)
+			{
+				// 子节点未显式设置：继承父节点状态（启用）
+				ChildNode.SetEnabled(true);
+
+#if !UE_BUILD_SHIPPING
+				LE_SYSTEM_LOG(TEXT("[InternalUpdateChildrenEnabledState] Parent enabled, child inherits (NotSet): %s -> Enabled"),
+					*ChildNode.CategoryFullName.ToString());
+#endif
+			}
+			else if (ChildNode.ExplicitEnabled == ELEEnabledState::Enabled)
+			{
+				// 子节点显式启用：设为启用
+				ChildNode.SetEnabled(true);
+
+#if !UE_BUILD_SHIPPING
+				LE_SYSTEM_LOG(TEXT("[InternalUpdateChildrenEnabledState] Parent enabled, child explicitly enabled: %s"),
+					*ChildNode.CategoryFullName.ToString());
+#endif
+			}
+			else // ELEEnabledState::Disabled
+			{
+				// 子节点显式禁用：保持禁用状态
+				ChildNode.SetEnabled(false);
+
+#if !UE_BUILD_SHIPPING
+				LE_SYSTEM_LOG(TEXT("[InternalUpdateChildrenEnabledState] Parent enabled, child explicitly disabled: %s"),
+					*ChildNode.CategoryFullName.ToString());
+#endif
+			}
+		}
+
+		// 递归更新子节点的子树，使用子节点的有效启用状态
+		InternalUpdateChildrenEnabledState(ChildIndex, ChildNode.bIsEnabled);
 	}
 }
 

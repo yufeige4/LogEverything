@@ -12,48 +12,103 @@ LogEverything is an Unreal Engine plugin that embeds Tencent's high-performance 
 - **Async-first defaults** – `FLELogSettings` ships with asynchronous flushing, sensible buffers, on-disk persistence, and baseline category configuration already enabled.
 - **Bundled tooling** – `Windows`/`Linux`/`macOS` category generators and sync scripts keep the vendored **BqLog** sources aligned with upstream releases.
 
-## Getting Started
-1. **Install** – Copy `Plugins/LogEverything` into your project or engine `Plugins/` folder and enable the plugin via `LogEverything.uplugin` or the `Unreal Editor` plugin browser.
-2. **Configure (optional)** – Edit `Config/LogEverythingCategories.txt` to match your hierarchy and run `Tools/BqLogTools/GenerateLogEverythingCategories.bat` (or the platform-specific generator) to refresh `Source/Generated/LogEverythingLogger.*` and `Config/LogEverythingCategoryConfig.json`.
-3. **Customize levels (optional)** – Edit `Config/LogEverythingCategoryConfig.json` to set per-category `level` and `enabled` overrides. Fields set to `"NotSet"` inherit from the parent node.
-4. **Build** – Regenerate project files if required and compile from the editor or your preferred build pipeline.
-5. **Run** – When the game instance boots, `ULELogSubsystem` initializes **BqLog**, loads the JSON category config, and writes logs under `Saved/LogEverything/LE_<ProcessId>_*.log`.
+## Quick Start
 
-### Minimal Usage Example
+### Installation
+
+1. Copy `Plugins/LogEverything` to your project's `Plugins/` folder
+2. Enable the plugin in Unreal Editor or add to your `.uproject` file
+3. Build your project
+
+That's it! LogEverything works out of the box with sensible defaults.
+
+### Basic Usage
+
 ```cpp
+// Step 1: Declare a log category (in header file)
+DECLARE_LE_CATEGORY_EXTERN(LogCombat, Game.Combat);
 
-// 如何声明一个日志分类
-DECLARE_LE_CATEGORY_EXTERN(LELogGameCombatSkill, Game.Combat.Skill);
-DEFINE_LE_CATEGORY(LELogGameCombatSkill);
+// Step 2: Define the category (in source file)
+DEFINE_LE_CATEGORY(LogCombat);
 
-// 任意玩法逻辑
-float PlayerHealth = 15.0f;
-int32 AmmoCount = 0;
-bool bIsEnemyNear = true;
-// 使用常规打印宏
-// 支持多种日志级别包含：Verbose, Debug, Info, Warning, Error, Fatal  
-// 可以限制不同分类具备不同日志等级权限
-LE_LOG(LELogTestLogSystem, Debug, TEXT("Current gameplay state:"));
-// 使用快捷打印宏
-LE_LOG_DEBUG(LELogTestLogSystem, TEXT("- Player health: {:.1f}"), PlayerHealth);
-LE_LOG_DEBUG(LELogTestLogSystem, TEXT("- Ammo count: {}"), AmmoCount);
-LE_LOG_DEBUG(LELogTestLogSystem, TEXT("- Enemy nearby: {}"), bIsEnemyNear ? TEXT("Yes") : TEXT("No"));
-LE_LOG_DEBUG(LELogTestLogSystem, TEXT(""));
-// 可以使用{}占位符来进行数据打印, 同时支持{:.2f}或{.2f}风格
-LE_CLOG_DEBUG(PlayerHealth < 20.0f, LELogGameCombatDamage, TEXT("Player health critically low: {:.1f}"), PlayerHealth);
-LE_CLOG_DEBUG(AmmoCount == 0, LELogGameCombatSkill, TEXT("Ammunition depleted, ranged skills unavailable"));
-LE_CLOG_DEBUG(bIsEnemyNear && PlayerHealth < 50.0f, LELogGameAI, TEXT("Danger: enemy closing in while health is low"));
+// Step 3: Start logging with modern {} formatting
+LE_LOG(LogCombat, Info, TEXT("Player {} dealt {} damage"), PlayerName, DamageAmount);
+```
 
-// 最终输出日志如下
-UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Test.LogSystem]	Current gameplay state:
-UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Test.LogSystem]	- Player health: 15.0
-UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Test.LogSystem]	- Ammo count: 0
-UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Test.LogSystem]	- Enemy nearby: Yes
-UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Test.LogSystem]	
-UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Game.Combat.Damage]	Player health critically low: 15.0
-UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Game.Combat.Skill]	Ammunition depleted, ranged skills unavailable
-UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread]	[D]	[Game.AI]	Danger: enemy closing in while health is low
+### Why LogEverything?
 
+| Feature | LE_LOG | UE_LOG |
+|---------|--------|--------|
+| Throughput | 2.54M logs/sec | 1.66M logs/sec |
+| Format syntax | Modern `{}` placeholders | printf-style `%s %d` |
+| Category hierarchy | `Game.Combat.Skill` | Flat categories |
+| Runtime filtering | Per-category levels | Limited |
+| Async persistence | Yes | Synchronous |
+
+### Code Examples
+
+**Simple Logging**
+```cpp
+LE_LOG(LogCombat, Info, TEXT("Combat started"));
+LE_LOG(LogCombat, Warning, TEXT("Low ammo: {} rounds left"), AmmoCount);
+LE_LOG(LogCombat, Error, TEXT("Failed to spawn projectile"));
+```
+
+**Conditional Logging**
+```cpp
+LE_CLOG(Health < 20.0f, LogCombat, Warning, TEXT("Critical health: {:.1f}"), Health);
+LE_CHECK(IsValid(Target), LogCombat, Error, TEXT("Invalid target"));
+```
+
+**Convenience Macros**
+```cpp
+LE_LOG_INFO(LogCombat, TEXT("Match started with {} players"), PlayerCount);
+LE_LOG_WARNING(LogCombat, TEXT("Server latency high: {}ms"), Latency);
+LE_LOG_ERROR(LogCombat, TEXT("Connection lost"));
+```
+
+**Runtime Configuration**
+```cpp
+// Adjust log levels at runtime
+LE_SET_CATEGORY_LEVEL(LogCombat, Warning);  // Only warnings and above
+LE_SET_GLOBAL_LEVEL(Info);                  // Set global threshold
+LE_DISABLE_CATEGORY(LogCombat);             // Temporarily disable
+```
+
+### Output Format
+
+```
+UTC+08 2025-09-27 10:51:36.942[tid-177304 GameThread] [I] [Game.Combat] Player John dealt 150 damage
+UTC+08 2025-09-27 10:51:36.943[tid-177304 GameThread] [W] [Game.Combat] Low ammo: 5 rounds left
+```
+
+### Advanced Configuration (Optional)
+
+For custom category hierarchies, edit `Config/LogEverythingCategories.txt`:
+
+```text
+Game
+Game.Combat
+Game.Combat.Damage
+Game.Combat.Skill
+Game.AI
+Game.AI.Pathfinding
+```
+
+Then run `Tools/BqLogTools/GenerateLogEverythingCategories.bat` to regenerate category code.
+
+For per-category level overrides, edit `Config/LogEverythingCategoryConfig.json`:
+
+```json
+{
+  "defaultLevel": "Info",
+  "categories": [
+    { "name": "Game", "children": [
+      { "name": "Combat", "level": "Debug" },
+      { "name": "AI", "level": "Warning" }
+    ]}
+  ]
+}
 ```
 
 ## Runtime Category Management
@@ -95,6 +150,49 @@ Plugins/LogEverything/
 └─ Tools/                      # Generators and helper scripts
 ```
 
+## Performance Benchmarks
+
+> Tested on Intel Core i7-14700 (28 cores), 127.6GB RAM, Windows 11, Development build
+> 10-round average with coefficient of variation < 2.2%
+
+### LE_LOG vs UE_LOG Comparison
+
+| Scenario | UE_LOG | LE_LOG (with filtering) | Improvement |
+|----------|--------|------------------------|-------------|
+| Baseline (1M logs) | 1.66M/s | 2.54M/s | **+52%** |
+| Formatted logging | 1.46M/s | 2.53M/s | **+73%** |
+| Multi-threaded (4T) | 4.93M/s | 5.37M/s | **+9%** |
+
+**Note**: LE_LOG includes full category/level filtering on every call. UE_LOG does not have this capability.
+
+### Filter Overhead
+
+| Filter Type | Per-call Overhead |
+|-------------|------------------|
+| Level filtering | **122 ns** |
+| Category disabled | **122 ns** |
+
+Even at high frequency, filtered log calls consume only ~120 nanoseconds each.
+
+### Why LE_LOG is Faster
+
+1. **Lock-free ring buffer** - BqLog kernel minimizes thread contention
+2. **Async persistence** - Logs buffer in memory, background thread flushes to disk
+3. **Efficient formatting** - `{}` placeholders outperform printf-style
+4. **Lightweight filtering** - Category checks add minimal overhead (~120ns)
+
+![Performance Comparison](docs/benchmark/perf_throughput_comparison.png)
+
+For detailed methodology and full results, see [Performance Report](docs/benchmark/PERFORMANCE_REPORT.md).
+
+## What's New in 1.0.0
+- **ShowDebug Visualization** - Real-time HUD display of category tree via `ShowDebug LogEverything` console command
+- **Performance Benchmarks** - LE_LOG is **52-73% faster** than UE_LOG while including full filtering
+- **Automated Test Suite** - 19 tests (11 functional + 8 performance) ensure reliability
+- **Dual Global Level** - Separated initialization and runtime levels for flexible control
+- **Filter overhead** measured at ~122 nanoseconds per call
+- Detailed release notes: [v1.0.0 Changelog (EN)](ChangeLogs/CHANGELOG_v1.0.0_EN.md)
+
 ## What's New in 0.9.0
 - Replaced the `ULECategoryConfigNode` UObject tree with a human-readable **JSON configuration** (`Config/LogEverythingCategoryConfig.json`) for per-category level and enablement overrides.
 - Added `Tools/BqLogTools/GenerateCategoryConfigJson.py` to auto-generate JSON from `LogEverythingCategories.txt` with **merge mode** that preserves existing settings on regeneration.
@@ -117,5 +215,5 @@ Plugins/LogEverything/
 ## Support & Roadmap
 - **Issues / feature requests** – Open a `GitHub` issue with reproduction steps or desired behaviour.
 - **Pull requests** – Mention tested `UnrealEngine` versions/platforms and attach relevant logs for significant changes.
-- **Upcoming roadmap** -- Logging performance benchmarks and profiling; environment-specific category and verbosity policies (`development`, `QA`, `shipping`, `dedicated server`) plus configurable settings assets.
-- **Changelogs** – Review [v0.9.0 Changelog (EN)](ChangeLogs/CHANGELOG_v0.9.0_EN.md), [v0.7.0 Changelog (EN)](ChangeLogs/CHANGELOG_v0.7.0_EN.md) and earlier files for version history.
+- **Upcoming roadmap** -- Environment-specific category and verbosity policies (`development`, `QA`, `shipping`, `dedicated server`) plus configurable settings assets; CI/CD performance regression tests.
+- **Changelogs** – Review [v1.0.0 Changelog (EN)](ChangeLogs/CHANGELOG_v1.0.0_EN.md), [v0.9.0 Changelog (EN)](ChangeLogs/CHANGELOG_v0.9.0_EN.md), [v0.7.0 Changelog (EN)](ChangeLogs/CHANGELOG_v0.7.0_EN.md) and earlier files for version history.
