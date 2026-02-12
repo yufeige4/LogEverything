@@ -157,13 +157,23 @@ Plugins/LogEverything/
 
 ### LE_LOG vs UE_LOG Comparison
 
+**Throughput** (higher is better):
+
 | Scenario | UE_LOG | LE_LOG (with filtering) | Improvement |
 |----------|--------|------------------------|-------------|
 | Baseline (1M logs) | 1.66M/s | 2.54M/s | **+52%** |
 | Formatted logging | 1.46M/s | 2.53M/s | **+73%** |
 | Multi-threaded (4T) | 4.93M/s | 5.37M/s | **+9%** |
 
-**Note**: LE_LOG includes full category/level filtering on every call. UE_LOG does not have this capability.
+**Per-Log Latency** (lower is better):
+
+| Scenario | UE_LOG | LE_LOG (with filtering) | Reduction |
+|----------|--------|------------------------|-----------|
+| Baseline | 601 ns | 394 ns | **-34%** |
+| Formatted | 683 ns | 396 ns | **-42%** |
+| Multi-threaded | 203 ns | 187 ns | **-8%** |
+
+**Note**: LE_LOG latency includes full category/level filtering on every call. UE_LOG does not have this capability.
 
 ### Filter Overhead
 

@@ -65,6 +65,18 @@ To eliminate noise and ensure statistical validity:
 | **Formatted** | 1.46M/s (683.26ms) | 2.53M/s (395.53ms) | **+73%** |
 | **Multi-threaded** | 4.93M/s (203.46ms) | 5.37M/s (186.56ms) | **+9%** |
 
+### Per-Log Latency Comparison
+
+Average time cost per single log call (lower is better):
+
+| Scenario | UE_LOG Latency | LE_LOG Latency | Reduction |
+|----------|----------------|----------------|-----------|
+| **Baseline** | 601 ns | 394 ns | **-34%** |
+| **Formatted** | 683 ns | 396 ns | **-42%** |
+| **Multi-threaded** | 203 ns | 187 ns | **-8%** |
+
+**Note**: LE_LOG latency includes full category/level filtering overhead on every call.
+
 ### Statistical Summary
 
 | Test Case | Mean Time | Std Dev | Mean Throughput | CV |
