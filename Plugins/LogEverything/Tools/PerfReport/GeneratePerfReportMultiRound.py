@@ -605,7 +605,7 @@ def generate_markdown_report(all_rounds: list, stats: list, output_dir: Path,
 
 ### 5.1 吞吐量对比图
 
-![吞吐量对比](perf_throughput_comparison.png)
+![吞吐量对比](perf_throughput_comparison_chn.png)
 
 **图表说明**：
 - 左图显示 UE_LOG 和 LE_LOG 在三种测试场景下的吞吐量对比
@@ -615,7 +615,7 @@ def generate_markdown_report(all_rounds: list, stats: list, output_dir: Path,
 
 ### 5.2 各轮次趋势图
 
-![轮次趋势](perf_rounds_trend.png)
+![轮次趋势](perf_rounds_trend_chn.png)
 
 **图表说明**：
 - 显示每轮测试的吞吐量变化趋势
@@ -624,7 +624,7 @@ def generate_markdown_report(all_rounds: list, stats: list, output_dir: Path,
 
 ### 5.3 过滤检查开销图
 
-![过滤开销](perf_filter_overhead.png)
+![过滤开销](perf_filter_overhead_chn.png)
 
 **图表说明**：
 - 显示日志被级别过滤或分类禁用时，每次调用的开销（纳秒）
