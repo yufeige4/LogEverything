@@ -171,15 +171,43 @@ def format_number(num):
         return f"{num:.0f}"
 
 
-def generate_throughput_chart(stats: list, output_dir: Path, rounds_count: int):
-    """生成吞吐量对比图表"""
+def generate_throughput_chart(stats: list, output_dir: Path, rounds_count: int, lang: str = 'chn'):
+    """生成吞吐量对比图表
+
+    Args:
+        stats: 统计数据列表
+        output_dir: 输出目录
+        rounds_count: 测试轮数
+        lang: 语言，'chn' 中文，'en' 英文
+    """
     if not HAS_MATPLOTLIB:
         return
 
+    # 中英文文本
+    texts = {
+        'chn': {
+            'scenarios': ['基准测试', '格式化测试', '多线程测试'],
+            'ylabel_left': '吞吐量 (百万条/秒)',
+            'xlabel': '测试场景',
+            'title_left': f'Development 环境: UE_LOG vs LE_LOG 吞吐量对比\n({rounds_count} 轮测试平均值，误差条表示标准差)',
+            'ylabel_right': '性能提升 (%)',
+            'title_right': f'LE_LOG 相对 UE_LOG 的性能提升\n(基于 {rounds_count} 轮测试平均值)',
+        },
+        'en': {
+            'scenarios': ['Baseline', 'Formatted', 'Multi-threaded'],
+            'ylabel_left': 'Throughput (M logs/sec)',
+            'xlabel': 'Test Scenario',
+            'title_left': f'Development Build: UE_LOG vs LE_LOG Throughput\n({rounds_count}-round average, error bars = std dev)',
+            'ylabel_right': 'Performance Improvement (%)',
+            'title_right': f'LE_LOG Performance Gain over UE_LOG\n(Based on {rounds_count}-round average)',
+        }
+    }
+    t = texts.get(lang, texts['en'])
+
     pairs = [
-        ('PERF-01', 'PERF-02', '基准测试'),
-        ('PERF-03', 'PERF-04', '格式化测试'),
-        ('PERF-07', 'PERF-08', '多线程测试')
+        ('PERF-01', 'PERF-02'),
+        ('PERF-03', 'PERF-04'),
+        ('PERF-07', 'PERF-08')
     ]
 
     scenarios = []
@@ -189,12 +217,12 @@ def generate_throughput_chart(stats: list, output_dir: Path, rounds_count: int):
     le_stds = []
     improvements = []
 
-    for ue_id, le_id, name in pairs:
+    for idx, (ue_id, le_id) in enumerate(pairs):
         ue_row = next((r for r in stats if ue_id in r['TestCase']), None)
         le_row = next((r for r in stats if le_id in r['TestCase']), None)
 
         if ue_row and le_row:
-            scenarios.append(name)
+            scenarios.append(t['scenarios'][idx])
             ue_throughputs.append(ue_row['AvgThroughput'])
             le_throughputs.append(le_row['AvgThroughput'])
             ue_stds.append(ue_row['StdThroughput'])
@@ -212,16 +240,16 @@ def generate_throughput_chart(stats: list, output_dir: Path, rounds_count: int):
 
     # 左图: 吞吐量对比（带误差条）
     ax1 = axes[0]
-    bars1 = ax1.bar([i - width/2 for i in x], [t/1000000 for t in ue_throughputs], width,
+    bars1 = ax1.bar([i - width/2 for i in x], [t_val/1000000 for t_val in ue_throughputs], width,
                     yerr=[s/1000000 for s in ue_stds], capsize=5,
                     label='UE_LOG', color='#4A90D9', alpha=0.8)
-    bars2 = ax1.bar([i + width/2 for i in x], [t/1000000 for t in le_throughputs], width,
+    bars2 = ax1.bar([i + width/2 for i in x], [t_val/1000000 for t_val in le_throughputs], width,
                     yerr=[s/1000000 for s in le_stds], capsize=5,
                     label='LE_LOG', color='#50C878', alpha=0.8)
 
-    ax1.set_ylabel('吞吐量 (百万条/秒)')
-    ax1.set_xlabel('测试场景')
-    ax1.set_title(f'Development 环境: UE_LOG vs LE_LOG 吞吐量对比\n({rounds_count} 轮测试平均值，误差条表示标准差)')
+    ax1.set_ylabel(t['ylabel_left'])
+    ax1.set_xlabel(t['xlabel'])
+    ax1.set_title(t['title_left'])
     ax1.set_xticks(x)
     ax1.set_xticklabels(scenarios)
     ax1.legend()
@@ -239,9 +267,9 @@ def generate_throughput_chart(stats: list, output_dir: Path, rounds_count: int):
     colors = ['#FF6B6B', '#4ECDC4', '#45B7D1']
     bars3 = ax2.bar(scenarios, improvements, color=colors[:len(scenarios)])
 
-    ax2.set_ylabel('性能提升 (%)')
-    ax2.set_xlabel('测试场景')
-    ax2.set_title(f'LE_LOG 相对 UE_LOG 的性能提升\n(基于 {rounds_count} 轮测试平均值)')
+    ax2.set_ylabel(t['ylabel_right'])
+    ax2.set_xlabel(t['xlabel'])
+    ax2.set_title(t['title_right'])
     ax2.grid(axis='y', linestyle='--', alpha=0.7)
 
     for bar, val in zip(bars3, improvements):
@@ -250,26 +278,56 @@ def generate_throughput_chart(stats: list, output_dir: Path, rounds_count: int):
 
     plt.tight_layout()
 
-    chart_path = output_dir / 'perf_throughput_comparison.png'
+    suffix = '_chn' if lang == 'chn' else '_en'
+    chart_path = output_dir / f'perf_throughput_comparison{suffix}.png'
     fig.savefig(chart_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print(f"[信息] 吞吐量对比图已保存: {chart_path}")
+    lang_name = '中文' if lang == 'chn' else 'English'
+    print(f"[信息] 吞吐量对比图({lang_name})已保存: {chart_path}")
 
 
-def generate_rounds_trend_chart(all_rounds: list, output_dir: Path):
-    """生成各轮次趋势图"""
+def generate_rounds_trend_chart(all_rounds: list, output_dir: Path, lang: str = 'chn'):
+    """生成各轮次趋势图
+
+    Args:
+        all_rounds: 所有轮次数据
+        output_dir: 输出目录
+        lang: 语言，'chn' 中文，'en' 英文
+    """
     if not HAS_MATPLOTLIB or len(all_rounds) < 2:
         return
 
     test_ids = ['PERF-01', 'PERF-02', 'PERF-03', 'PERF-04', 'PERF-07', 'PERF-08']
-    test_names = {
-        'PERF-01': 'UE_LOG 基准',
-        'PERF-02': 'LE_LOG 基准',
-        'PERF-03': 'UE_LOG 格式化',
-        'PERF-04': 'LE_LOG 格式化',
-        'PERF-07': 'UE_LOG 多线程',
-        'PERF-08': 'LE_LOG 多线程',
+
+    texts = {
+        'chn': {
+            'names': {
+                'PERF-01': 'UE_LOG 基准',
+                'PERF-02': 'LE_LOG 基准',
+                'PERF-03': 'UE_LOG 格式化',
+                'PERF-04': 'LE_LOG 格式化',
+                'PERF-07': 'UE_LOG 多线程',
+                'PERF-08': 'LE_LOG 多线程',
+            },
+            'xlabel': '测试轮次',
+            'ylabel': '吞吐量 (百万条/秒)',
+            'title': '各轮次测试结果趋势',
+        },
+        'en': {
+            'names': {
+                'PERF-01': 'UE_LOG Baseline',
+                'PERF-02': 'LE_LOG Baseline',
+                'PERF-03': 'UE_LOG Formatted',
+                'PERF-04': 'LE_LOG Formatted',
+                'PERF-07': 'UE_LOG Multi-thread',
+                'PERF-08': 'LE_LOG Multi-thread',
+            },
+            'xlabel': 'Test Round',
+            'ylabel': 'Throughput (M logs/sec)',
+            'title': 'Round-by-Round Test Results Trend',
+        }
     }
+    t = texts.get(lang, texts['en'])
 
     fig, ax = plt.subplots(figsize=(12, 6))
 
@@ -279,51 +337,70 @@ def generate_rounds_trend_chart(all_rounds: list, output_dir: Path):
     for idx, test_id in enumerate(test_ids):
         throughputs = []
         for round_data in all_rounds:
-            test_result = next((t for t in round_data['tests'] if test_id in t['TestCase']), None)
+            test_result = next((t_data for t_data in round_data['tests'] if test_id in t_data['TestCase']), None)
             if test_result:
                 throughputs.append(test_result['Throughput'] / 1000000)
             else:
                 throughputs.append(0)
 
-        if any(t > 0 for t in throughputs):
-            ax.plot(rounds, throughputs, marker='o', label=test_names.get(test_id, test_id),
+        if any(tp > 0 for tp in throughputs):
+            ax.plot(rounds, throughputs, marker='o', label=t['names'].get(test_id, test_id),
                     color=colors[idx % len(colors)], linewidth=2, markersize=6)
 
-    ax.set_xlabel('测试轮次')
-    ax.set_ylabel('吞吐量 (百万条/秒)')
-    ax.set_title('各轮次测试结果趋势')
+    ax.set_xlabel(t['xlabel'])
+    ax.set_ylabel(t['ylabel'])
+    ax.set_title(t['title'])
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     ax.grid(True, linestyle='--', alpha=0.7)
     ax.set_xticks(rounds)
 
     plt.tight_layout()
 
-    chart_path = output_dir / 'perf_rounds_trend.png'
+    suffix = '_chn' if lang == 'chn' else '_en'
+    chart_path = output_dir / f'perf_rounds_trend{suffix}.png'
     fig.savefig(chart_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print(f"[信息] 轮次趋势图已保存: {chart_path}")
+    lang_name = '中文' if lang == 'chn' else 'English'
+    print(f"[信息] 轮次趋势图({lang_name})已保存: {chart_path}")
 
 
-def generate_filter_performance_chart(stats: list, output_dir: Path, rounds_count: int):
-    """生成过滤检查开销图表"""
+def generate_filter_performance_chart(stats: list, output_dir: Path, rounds_count: int, lang: str = 'chn'):
+    """生成过滤检查开销图表
+
+    Args:
+        stats: 统计数据列表
+        output_dir: 输出目录
+        rounds_count: 测试轮数
+        lang: 语言，'chn' 中文，'en' 英文
+    """
     if not HAS_MATPLOTLIB:
         return
 
-    filter_tests = [
-        ('PERF-05', '级别过滤'),
-        ('PERF-06', '分类禁用'),
-    ]
+    texts = {
+        'chn': {
+            'names': ['级别过滤', '分类禁用'],
+            'ylabel': '每次调用开销 (纳秒)',
+            'title': f'LE_LOG 过滤检查开销\n({rounds_count} 轮测试平均值)',
+        },
+        'en': {
+            'names': ['Level Filtering', 'Category Disabled'],
+            'ylabel': 'Per-call Overhead (nanoseconds)',
+            'title': f'LE_LOG Filter Check Overhead\n({rounds_count}-round average)',
+        }
+    }
+    t = texts.get(lang, texts['en'])
+
+    filter_tests = [('PERF-05', 0), ('PERF-06', 1)]
 
     names = []
     latencies = []
     stds = []
 
-    for test_id, name in filter_tests:
+    for test_id, name_idx in filter_tests:
         row = next((r for r in stats if test_id in r['TestCase']), None)
         if row:
-            names.append(name)
+            names.append(t['names'][name_idx])
             latencies.append(row['AvgTimeNs'])
-            # 计算纳秒级别的标准差
             stds.append(row['StdTimeMs'] * 1000000 / row['LogCount'] if row['LogCount'] > 0 else 0)
 
     if not names:
@@ -334,8 +411,8 @@ def generate_filter_performance_chart(stats: list, output_dir: Path, rounds_coun
     colors = ['#50C878', '#FF6B6B']
     bars = ax.bar(names, latencies, color=colors[:len(names)], alpha=0.8)
 
-    ax.set_ylabel('每次调用开销 (纳秒)')
-    ax.set_title(f'LE_LOG 过滤检查开销\n({rounds_count} 轮测试平均值)')
+    ax.set_ylabel(t['ylabel'])
+    ax.set_title(t['title'])
     ax.grid(axis='y', linestyle='--', alpha=0.7)
 
     for bar, val in zip(bars, latencies):
@@ -344,10 +421,12 @@ def generate_filter_performance_chart(stats: list, output_dir: Path, rounds_coun
 
     plt.tight_layout()
 
-    chart_path = output_dir / 'perf_filter_overhead.png'
+    suffix = '_chn' if lang == 'chn' else '_en'
+    chart_path = output_dir / f'perf_filter_overhead{suffix}.png'
     fig.savefig(chart_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print(f"[信息] 过滤开销图已保存: {chart_path}")
+    lang_name = '中文' if lang == 'chn' else 'English'
+    print(f"[信息] 过滤开销图({lang_name})已保存: {chart_path}")
 
 
 def generate_markdown_report(all_rounds: list, stats: list, output_dir: Path,
@@ -685,11 +764,12 @@ def main():
 
     print()
 
-    # 生成图表
+    # 生成图表（中英文两版）
     if HAS_MATPLOTLIB:
-        generate_throughput_chart(stats, output_dir, loaded_rounds)
-        generate_rounds_trend_chart(all_rounds, output_dir)
-        generate_filter_performance_chart(stats, output_dir, loaded_rounds)
+        for lang in ['chn', 'en']:
+            generate_throughput_chart(stats, output_dir, loaded_rounds, lang)
+            generate_rounds_trend_chart(all_rounds, output_dir, lang)
+            generate_filter_performance_chart(stats, output_dir, loaded_rounds, lang)
 
     # 生成报告
     generate_markdown_report(all_rounds, stats, output_dir, loaded_rounds, system_info)
@@ -698,9 +778,12 @@ def main():
     print(f"[成功] 报告生成完成!")
     print(f"  - 详细报告: {output_dir / 'PERFORMANCE_REPORT.md'}")
     if HAS_MATPLOTLIB:
-        print(f"  - 吞吐量对比图: {output_dir / 'perf_throughput_comparison.png'}")
-        print(f"  - 轮次趋势图: {output_dir / 'perf_rounds_trend.png'}")
-        print(f"  - 过滤开销图: {output_dir / 'perf_filter_overhead.png'}")
+        print(f"  - 吞吐量对比图(中文): {output_dir / 'perf_throughput_comparison_chn.png'}")
+        print(f"  - 吞吐量对比图(英文): {output_dir / 'perf_throughput_comparison_en.png'}")
+        print(f"  - 轮次趋势图(中文): {output_dir / 'perf_rounds_trend_chn.png'}")
+        print(f"  - 轮次趋势图(英文): {output_dir / 'perf_rounds_trend_en.png'}")
+        print(f"  - 过滤开销图(中文): {output_dir / 'perf_filter_overhead_chn.png'}")
+        print(f"  - 过滤开销图(英文): {output_dir / 'perf_filter_overhead_en.png'}")
 
 
 if __name__ == '__main__':

@@ -181,7 +181,7 @@ Even at high frequency, filtered log calls consume only ~120 nanoseconds each.
 3. **Efficient formatting** - `{}` placeholders outperform printf-style
 4. **Lightweight filtering** - Category checks add minimal overhead (~120ns)
 
-![Performance Comparison](docs/benchmark/perf_throughput_comparison.png)
+![Performance Comparison](docs/benchmark/perf_throughput_comparison_en.png)
 
 For detailed methodology and full results, see [Performance Report](docs/benchmark/PERFORMANCE_REPORT.md).
 

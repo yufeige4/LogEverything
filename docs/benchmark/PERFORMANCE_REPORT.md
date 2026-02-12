@@ -91,7 +91,7 @@ When logs are filtered out, each call consumes only ~122 nanoseconds - negligibl
 
 ### Throughput Comparison
 
-![Throughput Comparison](perf_throughput_comparison.png)
+![Throughput Comparison](perf_throughput_comparison_en.png)
 
 **Chart Description:**
 - Left panel: Absolute throughput comparison (millions of logs per second)
@@ -100,7 +100,7 @@ When logs are filtered out, each call consumes only ~122 nanoseconds - negligibl
 
 ### Round-by-Round Trends
 
-![Rounds Trend](perf_rounds_trend.png)
+![Rounds Trend](perf_rounds_trend_en.png)
 
 **Chart Description:**
 - Shows throughput consistency across all 10 test rounds
@@ -109,7 +109,7 @@ When logs are filtered out, each call consumes only ~122 nanoseconds - negligibl
 
 ### Filter Overhead Analysis
 
-![Filter Overhead](perf_filter_overhead.png)
+![Filter Overhead](perf_filter_overhead_en.png)
 
 **Chart Description:**
 - Per-call overhead when logs are filtered (not written)

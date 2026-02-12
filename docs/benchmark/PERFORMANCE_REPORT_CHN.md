@@ -91,7 +91,7 @@
 
 ### 吞吐量对比图
 
-![吞吐量对比](perf_throughput_comparison.png)
+![吞吐量对比](perf_throughput_comparison_chn.png)
 
 **图表说明：**
 - 左图：吞吐量绝对值对比（百万条日志/秒）
@@ -100,7 +100,7 @@
 
 ### 轮次趋势图
 
-![轮次趋势](perf_rounds_trend.png)
+![轮次趋势](perf_rounds_trend_chn.png)
 
 **图表说明：**
 - 显示 10 轮测试的吞吐量一致性
@@ -109,7 +109,7 @@
 
 ### 过滤开销分析图
 
-![过滤开销](perf_filter_overhead.png)
+![过滤开销](perf_filter_overhead_chn.png)
 
 **图表说明：**
 - 日志被过滤（不写入）时的每次调用开销
