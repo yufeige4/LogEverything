@@ -192,7 +192,7 @@ Plugins/LogEverything/
 
 ![性能对比](docs/benchmark/perf_throughput_comparison_chn.png)
 
-详细测试方法和完整结果请查看 [性能测试报告](docs/benchmark/PERFORMANCE_REPORT.md)。
+详细测试方法和完整结果请查看 [性能测试报告](docs/benchmark/PERFORMANCE_REPORT_CHN.md)。
 
 ## 1.0.0 新特性
 - **ShowDebug 可视化** - 通过 `ShowDebug LogEverything` 控制台命令实时显示分类树

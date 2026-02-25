@@ -65,4 +65,3 @@
 ## Documentation
 
 - Full performance report: [docs/benchmark/PERFORMANCE_REPORT.md](../docs/benchmark/PERFORMANCE_REPORT.md)
-- Performance testing methodology: [Plugins/LogEverything/docs/solutions/performance-testing/](../Plugins/LogEverything/docs/solutions/performance-testing/)

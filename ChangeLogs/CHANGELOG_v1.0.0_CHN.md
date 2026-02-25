@@ -64,5 +64,4 @@
 
 ## 文档
 
-- 完整性能报告：[docs/benchmark/PERFORMANCE_REPORT.md](../docs/benchmark/PERFORMANCE_REPORT.md)
-- 性能测试方法论：[Plugins/LogEverything/docs/solutions/performance-testing/](../Plugins/LogEverything/docs/solutions/performance-testing/)
+- 完整性能报告：[docs/benchmark/PERFORMANCE_REPORT_CHN.md](../docs/benchmark/PERFORMANCE_REPORT_CHN.md)
