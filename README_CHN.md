@@ -190,7 +190,7 @@ Plugins/LogEverything/
 3. **高效格式化** - `{}` 占位符比 printf 风格更高效
 4. **轻量级过滤** - 分类检查仅增加约 120 纳秒开销
 
-![性能对比](docs/benchmark/perf_throughput_comparison_chn.png)
+![性能对比](https://raw.githubusercontent.com/yufeige4/LogEverything/master/docs/benchmark/perf_throughput_comparison_chn.png)
 
 详细测试方法和完整结果请查看 [性能测试报告](docs/benchmark/PERFORMANCE_REPORT_CHN.md)。
 
